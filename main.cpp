@@ -143,9 +143,14 @@ public:
     texture_buffer() : tex(-1)
     {
         if (!tex) glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     }
 
-    texture_buffer()
+    ~texture_buffer()
     {
         if (tex) glDeleteBuffers(1, &tex);
     }
@@ -154,22 +159,39 @@ public:
     {
         glBindTexture(GL_TEXTURE_2D, tex);
 
-        for (std::size_t Level = 0; Level < t.levels(); ++Level)
+        for (std::size_t Level = 0; Level < 1; ++Level)
         {
             GLsizei w = (t.extent(Level).x), h = (t.extent(Level).y);
             std::cout << w << ", " << h << std::endl;
             gli::gl GL(gli::gl::PROFILE_GL33);
             gli::gl::format const Format = GL.translate(t.format(), t.swizzles());
             GLenum Target = GL.translate(t.target());
-            glTextureImage2DEXT(tex, GL_TEXTURE_2D, GLint(Level), Format.Internal, w, h, 0,Format.External, Format.Type, t.data(0, 0, Level));
+            glTextureImage2DEXT(tex, GL_TEXTURE_2D, GLint(Level), Format.Internal, w, h, 0, Format.External, Format.Type, t.data(0, 0, Level));
         }
-
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     GLuint handle() const { return tex; }
 };
 
+inline void load_png(texture_buffer & buffer, const std::string & path, bool flip = false)
+{
+    auto binaryFile = read_file_binary(path);
+
+    if (flip) stbi_set_flip_vertically_on_load(1);
+    else stbi_set_flip_vertically_on_load(0);
+
+    int width, height, nBytes;
+    auto data = stbi_load_from_memory(binaryFile.data(), (int)binaryFile.size(), &width, &height, &nBytes, 0);
+
+    switch (nBytes)
+    {
+    case 3: glTextureImage2DEXT(buffer.handle(), GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data); break;
+    case 4: glTextureImage2DEXT(buffer.handle(), GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data); break;
+    default: throw std::runtime_error("unsupported number of channels");
+    }
+    stbi_image_free(data);
+}
 
 void draw_texture_buffer(float rx, float ry, float rw, float rh, const texture_buffer & buffer)
 {
@@ -184,6 +206,8 @@ void draw_texture_buffer(float rx, float ry, float rw, float rh, const texture_b
     glDisable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
+
+std::unique_ptr<texture_buffer> loadedTexture;
 
 int main(int argc, char * argv[])
 {
@@ -200,6 +224,9 @@ int main(int argc, char * argv[])
     {
         for (int f = 0; f < numFiles; f++)
         {
+            loadedTexture.reset(new texture_buffer()); // gen handle
+            std::cout << "Creating: " << loadedTexture->handle() << std::endl;
+
             // todo: check extension
 
             std::cout << "Dropped " << paths[f] << std::endl;
@@ -216,6 +243,9 @@ int main(int argc, char * argv[])
             }
 
             gli::texture imgHandle(gli::load_dds((char *)data.data(), data.size()));
+            loadedTexture->upload(imgHandle);
+
+            //loadedTexture->load_png(paths[f], false);
         }
     };
 
@@ -233,8 +263,15 @@ int main(int argc, char * argv[])
         glClear(GL_COLOR_BUFFER_BIT);
 
         glPushMatrix();
+
         glOrtho(0, windowSize.x, windowSize.y, 0, -1, +1);
         draw_text(10, 10, "Hello World");
+
+        if (loadedTexture.get())
+        {
+            draw_texture_buffer(0, 0, windowSize.x / 2, windowSize.y / 2, *loadedTexture.get());
+        }
+
         glPopMatrix();
 
         win->swap_buffers();
