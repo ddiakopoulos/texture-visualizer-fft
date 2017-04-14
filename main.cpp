@@ -135,6 +135,36 @@ public:
 
 std::unique_ptr<Window> win;
 
+class texture_buffer
+{
+    GLuint tex;
+public:
+
+    texture_buffer() : tex(-1)
+    {
+        if (!tex) glGenTextures(1, &tex);
+    }
+
+    void upload(const gli::texture & t)
+    {
+        glBindTexture(GL_TEXTURE_2D, tex);
+
+        for (std::size_t Level = 0; Level < t.levels(); ++Level)
+        {
+            GLsizei w = (t.extent(Level).x), h = (t.extent(Level).y);
+            std::cout << w << ", " << h << std::endl;
+            gli::gl GL(gli::gl::PROFILE_GL33);
+            gli::gl::format const Format = GL.translate(t.format(), t.swizzles());
+            GLenum Target = GL.translate(t.target());
+            glTextureImage2DEXT(tex, GL_TEXTURE_2D, GLint(Level), Format.Internal, w, h, 0,Format.External, Format.Type, t.data(0, 0, Level));
+        }
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    GLuint handle() const { return tex; }
+};
+
 int main(int argc, char * argv[])
 {
     try
@@ -150,6 +180,8 @@ int main(int argc, char * argv[])
     {
         for (int f = 0; f < numFiles; f++)
         {
+            // todo: check extension
+
             std::cout << "Dropped " << paths[f] << std::endl;
 
             std::vector<uint8_t> data;
@@ -164,30 +196,6 @@ int main(int argc, char * argv[])
             }
 
             gli::texture imgHandle(gli::load_dds((char *)data.data(), data.size()));
-        }
-    };
-
-    auto load_tex = [](GLuint t, const gli::texture & tex)
-    {
-        for (std::size_t Level = 0; Level < tex.levels(); ++Level)
-        {
-            std::cout << GLsizei(tex.extent(Level).x) << ", " << GLsizei(tex.extent(Level).y) << std::endl;
-
-            gli::gl GL(gli::gl::PROFILE_GL33);
-            gli::gl::format const Format = GL.translate(tex.format(), tex.swizzles());
-            GLenum Target = GL.translate(tex.target());
-
-            glTextureImage2DEXT(
-                t,
-                GL_TEXTURE_2D,
-                GLint(Level),
-                Format.Internal,
-                GLsizei(tex.extent(Level).x),
-                GLsizei(tex.extent(Level).y),
-                0,
-                Format.External,
-                Format.Type,
-                tex.data(0, 0, Level));
         }
     };
 
