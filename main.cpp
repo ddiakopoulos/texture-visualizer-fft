@@ -7,6 +7,8 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
+#include "gli/gli.hpp"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "third-party/stb/stb_image.h"
 
@@ -127,6 +129,30 @@ int main(int argc, char * argv[])
         {
             std::cout << "Dropped " << paths[f] << std::endl;
         }
+    };
+
+    auto load_tex = [](GLuint t, const gli::texture & tex)
+    {
+            for (std::size_t Level = 0; Level < tex.levels(); ++Level)
+            {
+                std::cout << GLsizei(tex.extent(Level).x) << ", " << GLsizei(tex.extent(Level).y) << std::endl;
+
+                gli::gl GL(gli::gl::PROFILE_GL33);
+                gli::gl::format const Format = GL.translate(tex.format(), tex.swizzles());
+                GLenum Target = GL.translate(tex.target());
+
+                glTextureImage2DEXT(
+                    t,
+                    GL_TEXTURE_2D,
+                    GLint(Level),
+                    Format.Internal,
+                    GLsizei(tex.extent(Level).x),
+                    GLsizei(tex.extent(Level).y),
+                    0,
+                    Format.External,
+                    Format.Type,
+                    tex.data(0, 0, Level));
+            }
     };
 
     auto t0 = std::chrono::high_resolution_clock::now();
