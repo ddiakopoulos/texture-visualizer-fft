@@ -20,11 +20,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="third-party\kissfft\src\kiss_fft.cpp" />
+    <ClCompile Include="third-party\kissfft\src\kiss_fftr.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="third-party\glfw-3.1.2\glfw3.vcxproj">
       <Project>{be423e72-28c2-4fb7-9fe1-42aa2f393bbc}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="third-party\kissfft\kissfft.hpp" />
+    <ClInclude Include="third-party\kissfft\kiss_fft.hpp" />
+    <ClInclude Include="third-party\kissfft\kiss_fftr.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E8595BE1-022E-46B2-9079-A12C655C5E4B}</ProjectGuid>
