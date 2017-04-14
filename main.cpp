@@ -13,12 +13,23 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "third-party/stb/stb_image_write.h"
 
+#include "third-party/stb/stb_easy_font.h"
+
 #define GLEW_STATIC
 #define GL_GLEXT_PROTOTYPES
 #include "glew.h"
 
 #define GLFW_INCLUDE_GLU
 #include "GLFW\glfw3.h"
+
+inline void draw_text(int x, int y, const char * text)
+{
+    char buffer[64000];
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(2, GL_FLOAT, 16, buffer);
+    glDrawArrays(GL_QUADS, 0, 4 * stb_easy_font_print((float)x, (float)(y - 7), (char *)text, nullptr, buffer, sizeof(buffer)));
+    glDisableClientState(GL_VERTEX_ARRAY);
+}
 
 class Window
 {
@@ -126,6 +137,15 @@ int main(int argc, char * argv[])
         auto t1 = std::chrono::high_resolution_clock::now();
         float timestep = std::chrono::duration<float>(t1 - t0).count();
         t0 = t1;
+
+        auto windowSize = win->get_window_size();
+        glViewport(0, 0, windowSize.x, windowSize.y);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glPushMatrix();
+        glOrtho(0, windowSize.x, windowSize.y, 0, -1, +1);
+        draw_text(10, 10, "Hello World");
+        glPopMatrix();
 
         win->swap_buffers();
     }
