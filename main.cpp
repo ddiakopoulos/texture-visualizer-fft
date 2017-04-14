@@ -170,6 +170,21 @@ public:
     GLuint handle() const { return tex; }
 };
 
+
+void draw_texture_buffer(float rx, float ry, float rw, float rh, const texture_buffer & buffer)
+{
+    glBindTexture(GL_TEXTURE_2D, buffer.handle());
+    glEnable(GL_TEXTURE_2D);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0, 0); glVertex2f(rx, ry);
+    glTexCoord2f(1, 0); glVertex2f(rx + rw, ry);
+    glTexCoord2f(1, 1); glVertex2f(rx + rw, ry + rh);
+    glTexCoord2f(0, 1); glVertex2f(rx, ry + rh);
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 int main(int argc, char * argv[])
 {
     try
