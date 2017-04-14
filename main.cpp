@@ -1,6 +1,7 @@
 #include <iostream>
 #include <functional>
 #include <map>
+#include <memory>
 #include "linalg_util.hpp"
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -49,12 +50,34 @@ public:
             throw std::runtime_error(std::string("glewInit() failed - ") + (const char *)glewGetErrorString(err));
         }
 
+        glfwSetCharCallback(window, [](GLFWwindow * window, unsigned int codepoint) { 
+            auto w = (Window *)glfwGetWindowUserPointer(window); if (w->on_char) w->on_char(codepoint); 
+        });
+
+        glfwSetKeyCallback(window, [](GLFWwindow * window, int key, int, int action, int mods) { 
+            auto w = (Window *)glfwGetWindowUserPointer(window); if (w->on_key) w->on_key(key, action, mods); 
+        });
+
+        glfwSetMouseButtonCallback(window, [](GLFWwindow * window, int button, int action, int mods) { 
+            auto w = (Window *)glfwGetWindowUserPointer(window); if (w->on_mouse_button) w->on_mouse_button(button, action, mods); 
+        });
+
+        glfwSetCursorPosCallback(window, [](GLFWwindow * window, double xpos, double ypos) { 
+            auto w = (Window *)glfwGetWindowUserPointer(window); if (w->on_cursor_pos) w->on_cursor_pos(float2(double2(xpos, ypos))); 
+        });
+
+        glfwSetDropCallback(window, [](GLFWwindow * window, int numFiles, const char ** paths) { 
+            auto w = (Window *)glfwGetWindowUserPointer(window); if (w->on_drop) w->on_drop(numFiles, paths); 
+        });
+
         glfwSetWindowUserPointer(window, this);
     }
 
     ~Window()
     {
-
+        glfwMakeContextCurrent(window);
+        glfwDestroyWindow(window);
+        glfwTerminate();
     }
 
     Window(const Window &) = delete;
@@ -73,7 +96,17 @@ public:
     void close() { glfwSetWindowShouldClose(window, 1); }
 };
 
+std::unique_ptr<Window> win;
+
 int main(int argc, char * argv[])
 {
+    try
+    {
+        win.reset(new Window(1280, 720, "mip visualizer"));
+    }
+    catch (const std::exception & e)
+    {
+        std::cout << "Caught GLFW window exception: " << e.what() << std::endl;
+    }
     return EXIT_SUCCESS;
 }
