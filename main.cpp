@@ -3,6 +3,9 @@
 #include <map>
 #include <memory>
 #include <chrono>
+#include <vector>
+#include <stdint.h>
+
 #include "linalg_util.hpp"
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -31,6 +34,26 @@ inline void draw_text(int x, int y, const char * text)
     glVertexPointer(2, GL_FLOAT, 16, buffer);
     glDrawArrays(GL_QUADS, 0, 4 * stb_easy_font_print((float)x, (float)(y - 7), (char *)text, nullptr, buffer, sizeof(buffer)));
     glDisableClientState(GL_VERTEX_ARRAY);
+}
+
+inline std::vector<uint8_t> read_file_binary(const std::string pathToFile)
+{
+    FILE * f = fopen(pathToFile.c_str(), "rb");
+
+    if (!f) throw std::runtime_error("file not found");
+
+    fseek(f, 0, SEEK_END);
+    size_t lengthInBytes = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    std::vector<uint8_t> fileBuffer(lengthInBytes);
+
+    size_t elementsRead = fread(fileBuffer.data(), 1, lengthInBytes, f);
+
+    if (elementsRead == 0 || fileBuffer.size() < 4) throw std::runtime_error("error reading file or file too small");
+
+    fclose(f);
+    return fileBuffer;
 }
 
 class Window
@@ -128,31 +151,44 @@ int main(int argc, char * argv[])
         for (int f = 0; f < numFiles; f++)
         {
             std::cout << "Dropped " << paths[f] << std::endl;
+
+            std::vector<uint8_t> data;
+
+            try
+            {
+                data = read_file_binary(std::string(paths[f]));
+            }
+            catch (const std::exception & e)
+            {
+                std::cout << "Couldn't read file: " << e.what() << std::endl;
+            }
+
+            gli::texture imgHandle(gli::load_dds((char *)data.data(), data.size()));
         }
     };
 
     auto load_tex = [](GLuint t, const gli::texture & tex)
     {
-            for (std::size_t Level = 0; Level < tex.levels(); ++Level)
-            {
-                std::cout << GLsizei(tex.extent(Level).x) << ", " << GLsizei(tex.extent(Level).y) << std::endl;
+        for (std::size_t Level = 0; Level < tex.levels(); ++Level)
+        {
+            std::cout << GLsizei(tex.extent(Level).x) << ", " << GLsizei(tex.extent(Level).y) << std::endl;
 
-                gli::gl GL(gli::gl::PROFILE_GL33);
-                gli::gl::format const Format = GL.translate(tex.format(), tex.swizzles());
-                GLenum Target = GL.translate(tex.target());
+            gli::gl GL(gli::gl::PROFILE_GL33);
+            gli::gl::format const Format = GL.translate(tex.format(), tex.swizzles());
+            GLenum Target = GL.translate(tex.target());
 
-                glTextureImage2DEXT(
-                    t,
-                    GL_TEXTURE_2D,
-                    GLint(Level),
-                    Format.Internal,
-                    GLsizei(tex.extent(Level).x),
-                    GLsizei(tex.extent(Level).y),
-                    0,
-                    Format.External,
-                    Format.Type,
-                    tex.data(0, 0, Level));
-            }
+            glTextureImage2DEXT(
+                t,
+                GL_TEXTURE_2D,
+                GLint(Level),
+                Format.Internal,
+                GLsizei(tex.extent(Level).x),
+                GLsizei(tex.extent(Level).y),
+                0,
+                Format.External,
+                Format.Type,
+                tex.data(0, 0, Level));
+        }
     };
 
     auto t0 = std::chrono::high_resolution_clock::now();
