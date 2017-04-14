@@ -11,6 +11,11 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "third-party/stb/stb_image_write.h"
 
+#define GLEW_STATIC
+#define GL_GLEXT_PROTOTYPES
+#include "glew.h"
+
+#define GLFW_INCLUDE_GLU
 #include "GLFW\glfw3.h"
 
 class Window
@@ -36,6 +41,15 @@ public:
         {
             throw std::runtime_error("glfwCreateWindow() failed");
         }
+
+        glfwMakeContextCurrent(window);
+
+        if (GLenum err = glewInit())
+        {
+            throw std::runtime_error(std::string("glewInit() failed - ") + (const char *)glewGetErrorString(err));
+        }
+
+        glfwSetWindowUserPointer(window, this);
     }
 
     ~Window()
