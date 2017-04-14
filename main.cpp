@@ -110,6 +110,14 @@ int main(int argc, char * argv[])
         std::cout << "Caught GLFW window exception: " << e.what() << std::endl;
     }
 
+    win->on_drop = [](int numFiles, const char ** paths)
+    {
+        for (int f = 0; f < numFiles; f++)
+        {
+            std::cout << "Dropped " << paths[f] << std::endl;
+        }
+    };
+
     auto t0 = std::chrono::high_resolution_clock::now();
     while (!win->should_close())
     {
