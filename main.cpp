@@ -145,6 +145,11 @@ public:
         if (!tex) glGenTextures(1, &tex);
     }
 
+    texture_buffer()
+    {
+        if (tex) glDeleteBuffers(1, &tex);
+    }
+
     void upload(const gli::texture & t)
     {
         glBindTexture(GL_TEXTURE_2D, tex);
