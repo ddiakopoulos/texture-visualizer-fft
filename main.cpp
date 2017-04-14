@@ -2,6 +2,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <chrono>
 #include "linalg_util.hpp"
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -107,6 +108,18 @@ int main(int argc, char * argv[])
     catch (const std::exception & e)
     {
         std::cout << "Caught GLFW window exception: " << e.what() << std::endl;
+    }
+
+    auto t0 = std::chrono::high_resolution_clock::now();
+    while (!win->should_close())
+    {
+        glfwPollEvents();
+
+        auto t1 = std::chrono::high_resolution_clock::now();
+        float timestep = std::chrono::duration<float>(t1 - t0).count();
+        t0 = t1;
+
+        win->swap_buffers();
     }
     return EXIT_SUCCESS;
 }
