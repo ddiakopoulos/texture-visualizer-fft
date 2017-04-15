@@ -165,6 +165,19 @@ public:
     GLuint handle() const { return tex; }
 };
 
+template <typename T, int C>
+struct image_buffer
+{
+    std::shared_ptr<T> data;
+    float2 size;
+    T * alias;
+    struct delete_array { void operator()(T const * p) { delete[] p; } };
+    image_buffer(float2 size) : size(size), data(new T[size.x * size.y * C], delete_array())
+    {
+        alias = data.get();
+    }
+};
+
 inline void upload_png(texture_buffer & buffer, const std::string & path, bool flip = false)
 {
     auto binaryFile = read_file_binary(path);
@@ -216,6 +229,8 @@ std::unique_ptr<texture_buffer> loadedTexture;
 
 int main(int argc, char * argv[])
 {
+    image_buffer<uint8_t, 1> sample({ 100.f, 100.f });
+
     try
     {
         win.reset(new Window(1280, 720, "mip visualizer"));
@@ -251,7 +266,7 @@ int main(int argc, char * argv[])
             {
                 upload_png(*loadedTexture.get(), paths[f], false);
             }
-            else if (ext == "dxt")
+            else if (ext == "dds")
             {
                 gli::texture imgHandle(gli::load_dds((char *)data.data(), data.size()));
                 upload_dxt(*loadedTexture.get(), imgHandle);
