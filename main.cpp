@@ -32,6 +32,7 @@
 #include "kissfft/kissfft.hpp"
 #include "kissfft/kiss_fft.hpp"
 #include "kissfft/kiss_fftr.hpp"
+using namespace kissfft_utils;
 
 inline void draw_text(int x, int y, const char * text)
 {
@@ -280,6 +281,19 @@ void draw_texture_buffer(float rx, float ry, float rw, float rh, const texture_b
 // In place
 void compute_fft_2d(std::complex<float> * data, int width, int height)
 {
+    bool inverse = false;
+    kissfft<float> xFFT(width, inverse);
+    kissfft<float> yFFT(height, inverse);
+
+    std::complex<float> * xTmp = new std::complex<float>[std::max(width, height)];
+    xFFT.transform(&data[width * height], xTmp);
+    for (int y = 0; y < width; ++y)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            data[width * y + x] = xTmp[x];
+        }
+    }
 
 }
 
