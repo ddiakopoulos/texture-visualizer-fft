@@ -247,7 +247,7 @@ image_buffer<float, 1> png_to_luminance(std::vector<uint8_t> & binaryData)
 
 void upload_luminance(texture_buffer & buffer, image_buffer<float, 1> & imgData)
 {
-    glTextureImage2DEXT(buffer.handle(), GL_TEXTURE_2D, 0, GL_RGB, imgData.size.x, imgData.size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, imgData.data.get());
+    glTextureImage2DEXT(buffer.handle(), GL_TEXTURE_2D, 0, GL_LUMINANCE, imgData.size.x, imgData.size.y, 0, GL_LUMINANCE, GL_FLOAT, imgData.data.get());
 }
 
 void draw_texture_buffer(float rx, float ry, float rw, float rh, const texture_buffer & buffer)
