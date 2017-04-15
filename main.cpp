@@ -285,16 +285,38 @@ void compute_fft_2d(std::complex<float> * data, int width, int height)
     kissfft<float> xFFT(width, inverse);
     kissfft<float> yFFT(height, inverse);
 
-    std::complex<float> * xTmp = new std::complex<float>[std::max(width, height)];
-    xFFT.transform(&data[width * height], xTmp);
+    // Compute FFT on X axis
     for (int y = 0; y < width; ++y)
     {
+        std::complex<float> * xTmp = new std::complex<float>[std::max(width, height)];
+        xFFT.transform(&data[width * height], xTmp);
+
         for (int x = 0; x < width; x++)
         {
-            data[width * y + x] = xTmp[x];
+            data[y * width + x] = xTmp[x];
         }
     }
 
+    // Compute FFT on Y axis
+    for (int x = 0; x < width; x++)
+    {
+        // For data locality, create a 1d src "row" out of the Y column
+
+        std::complex<float> * src = new std::complex<float>[height];
+        std::complex<float> * yTmp = new std::complex<float>[std::max(width, height)];
+
+        for (int y = 0; y < height; y++)
+        {
+            src[y] = data[y * width + x];
+        }
+
+        yFFT.transform(src, yTmp);
+
+        for (int y = 0; y < height; y++)
+        {
+            data[y * width + x] = yTmp[y];
+        }
+    }
 }
 
 //////////////////////////
