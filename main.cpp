@@ -36,7 +36,7 @@ inline void draw_text(int x, int y, const char * text)
     glDisableClientState(GL_VERTEX_ARRAY);
 }
 
-std::string get_extension(const std::string & path)
+inline std::string get_extension(const std::string & path)
 {
     auto found = path.find_last_of('.');
     if (found == std::string::npos) return "";
@@ -153,8 +153,6 @@ public:
     void close() { glfwSetWindowShouldClose(window, 1); }
 };
 
-std::unique_ptr<Window> win;
-
 class texture_buffer
 {
     GLuint tex;
@@ -184,6 +182,7 @@ struct image_buffer
     const int2 size;
     T * alias;
     struct delete_array { void operator()(T const * p) { delete[] p; } };
+    image_buffer() : size({ 0, 0 }) { }
     image_buffer(const int2 size) : size(size), data(new T[size.x * size.y * C], delete_array()) { alias = data.get(); }
     int size_bytes() const { return C * size.x * size.y * sizeof(T); }
     int num_pixels() const { return size.x * size.y; }
@@ -191,15 +190,13 @@ struct image_buffer
     T & operator()(int y, int x, int channel) { return alias[C * (y * size.x + x) + channel]; }
 };
 
-inline void upload_png(texture_buffer & buffer, const std::string & path, bool flip = false)
+inline void upload_png(texture_buffer & buffer, std::vector<uint8_t> & binaryData, bool flip = false)
 {
-    auto binaryFile = read_file_binary(path);
-
     if (flip) stbi_set_flip_vertically_on_load(1);
     else stbi_set_flip_vertically_on_load(0);
 
     int width, height, nBytes;
-    auto data = stbi_load_from_memory(binaryFile.data(), (int)binaryFile.size(), &width, &height, &nBytes, 0);
+    auto data = stbi_load_from_memory(binaryData.data(), (int)binaryData.size(), &width, &height, &nBytes, 0);
 
     switch (nBytes)
     {
@@ -239,7 +236,12 @@ void draw_texture_buffer(float rx, float ry, float rw, float rh, const texture_b
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+//////////////////////////
+//   Main Application   //
+//////////////////////////
+
 std::unique_ptr<texture_buffer> loadedTexture;
+std::unique_ptr<Window> win;
 
 int main(int argc, char * argv[])
 {
@@ -247,7 +249,7 @@ int main(int argc, char * argv[])
 
     try
     {
-        win.reset(new Window(1280, 720, "mip visualizer"));
+        win.reset(new Window(1280, 720, "image visualizer"));
     }
     catch (const std::exception & e)
     {
@@ -259,13 +261,11 @@ int main(int argc, char * argv[])
         for (int f = 0; f < numFiles; f++)
         {
             loadedTexture.reset(new texture_buffer()); // gen handle
-
-            auto ext = get_extension(paths[f]);
+            const auto ext = get_extension(paths[f]);
+            std::vector<uint8_t> data;
 
             // Draw as text
             // std::cout << "Dropped " <<  << std::endl;
-
-            std::vector<uint8_t> data;
 
             try
             {
@@ -278,7 +278,7 @@ int main(int argc, char * argv[])
 
             if (ext == "png")
             {
-                upload_png(*loadedTexture.get(), paths[f], false);
+                upload_png(*loadedTexture.get(), data, false);
             }
             else if (ext == "dds")
             {
