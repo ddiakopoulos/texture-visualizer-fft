@@ -73,7 +73,7 @@ inline float as_float(const T & x)
 {
     const float min = std::numeric_limits<T>::min();
     const float max = std::numeric_limits<T>::max();
-    return 2.0 * (x - min) / (max - min) - 1.0;
+    return (x - min) / (max - min);
 }
 
 class Window
@@ -188,6 +188,12 @@ struct image_buffer
     int num_pixels() const { return size.x * size.y; }
     T & operator()(int y, int x) { return alias[y * size.x + x]; }
     T & operator()(int y, int x, int channel) { return alias[C * (y * size.x + x) + channel]; }
+    T compute_mean() const
+    {
+        T m = 0.0f;
+        for (int x = 0; x < size.x * size.y; ++x) m += alias[x];
+        return m / (size.x * size.y);
+    }
 };
 
 inline void upload_png(texture_buffer & buffer, std::vector<uint8_t> & binaryData, bool flip = false)
@@ -238,6 +244,7 @@ image_buffer<float, 1> png_to_luminance(std::vector<uint8_t> & binaryData)
             const float r = as_float<uint8_t>(data[nBytes * (y * width + x) + 0]);
             const float g = as_float<uint8_t>(data[nBytes * (y * width + x) + 1]);
             const float b = as_float<uint8_t>(data[nBytes * (y * width + x) + 2]);
+            //std::cout << r << ", " << g << ", " << b << std::endl;
             buffer(y, x) = to_luminance(r, g, b);
         }
     }
@@ -273,7 +280,7 @@ std::unique_ptr<Window> win;
 
 int main(int argc, char * argv[])
 {
-    std::string loadedFilePath;
+    std::string loadedFilePath("No file currently loaded...");
 
     try
     {
@@ -307,6 +314,7 @@ int main(int argc, char * argv[])
             {
                 //upload_png(*loadedTexture.get(), data, false);
                 auto luminanceImageBuffer = png_to_luminance(data);
+                std::cout << "Mean: " << luminanceImageBuffer.compute_mean() << std::endl;
                 upload_luminance(*loadedTexture.get(), luminanceImageBuffer);
             }
             else if (ext == "dds")
