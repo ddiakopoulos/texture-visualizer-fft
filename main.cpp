@@ -162,26 +162,10 @@ public:
         if (tex) glDeleteBuffers(1, &tex);
     }
 
-    void upload(const gli::texture & t)
-    {
-        glBindTexture(GL_TEXTURE_2D, tex);
-
-        for (std::size_t l = 0; l < t.levels(); ++l)
-        {
-            GLsizei w = (t.extent(l).x), h = (t.extent(l).y);
-            std::cout << w << ", " << h << std::endl;
-            gli::gl GL(gli::gl::PROFILE_GL33);
-            gli::gl::format const Format = GL.translate(t.format(), t.swizzles());
-            GLenum Target = GL.translate(t.target());
-            glTextureImage2DEXT(tex, GL_TEXTURE_2D, GLint(l), Format.Internal, w, h, 0, Format.External, Format.Type, t.data(0, 0, l));
-        }
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-
     GLuint handle() const { return tex; }
 };
 
-inline void load_png(texture_buffer & buffer, const std::string & path, bool flip = false)
+inline void upload_png(texture_buffer & buffer, const std::string & path, bool flip = false)
 {
     auto binaryFile = read_file_binary(path);
 
@@ -198,6 +182,20 @@ inline void load_png(texture_buffer & buffer, const std::string & path, bool fli
     default: throw std::runtime_error("unsupported number of channels");
     }
     stbi_image_free(data);
+}
+
+
+inline void upload_dxt(texture_buffer & buffer, const gli::texture & t)
+{
+    for (std::size_t l = 0; l < t.levels(); ++l)
+    {
+        GLsizei w = (t.extent(l).x), h = (t.extent(l).y);
+        std::cout << w << ", " << h << std::endl;
+        gli::gl GL(gli::gl::PROFILE_GL33);
+        gli::gl::format const Format = GL.translate(t.format(), t.swizzles());
+        GLenum Target = GL.translate(t.target());
+        glTextureImage2DEXT(buffer.handle(), GL_TEXTURE_2D, GLint(l), Format.Internal, w, h, 0, Format.External, Format.Type, t.data(0, 0, l));
+    }
 }
 
 void draw_texture_buffer(float rx, float ry, float rw, float rh, const texture_buffer & buffer)
@@ -232,9 +230,6 @@ int main(int argc, char * argv[])
         for (int f = 0; f < numFiles; f++)
         {
             loadedTexture.reset(new texture_buffer()); // gen handle
-            std::cout << "Creating: " << loadedTexture->handle() << std::endl;
-
-            // todo: check extension
 
             auto ext = get_extension(paths[f]);
 
@@ -254,12 +249,12 @@ int main(int argc, char * argv[])
 
             if (ext == "png")
             {
-                load_png(*loadedTexture.get(), paths[f], false);
+                upload_png(*loadedTexture.get(), paths[f], false);
             }
             else if (ext == "dxt")
             {
                 gli::texture imgHandle(gli::load_dds((char *)data.data(), data.size()));
-                loadedTexture->upload(imgHandle);
+                upload_dxt(*loadedTexture.get(), imgHandle);
             }
             else
             {
