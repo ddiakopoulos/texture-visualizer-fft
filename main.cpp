@@ -1,3 +1,5 @@
+// http://paulbourke.net/miscellaneous/imagefilter/
+
 #include <iostream>
 #include <functional>
 #include <map>
@@ -274,7 +276,7 @@ void draw_texture_buffer(float rx, float ry, float rw, float rh, const texture_b
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-inline void shift_fft(image_buffer<float, 1> & data)
+inline void shift_fft_image(image_buffer<float, 1> & data)
 {
     float max, min;
     max = min = data(0, 0);
@@ -289,7 +291,7 @@ inline void shift_fft(image_buffer<float, 1> & data)
     apply([&](int i, int j) { data(i, j) *= (255.f / max); });
 }
 
-void center_fft(image_buffer<float, 1> & in, image_buffer<float, 1> & out)
+void center_fft_image(image_buffer<float, 1> & in, image_buffer<float, 1> & out)
 {
     const int halfWidth = in.size.x / 2;
     const int halfHeight = in.size.y / 2;
@@ -412,16 +414,17 @@ int main(int argc, char * argv[])
                 {
                     for (int x = 0; x < img.size.x; x++)
                     {
-                        img(y, x) = (std::abs(imgAsComplexArray[y * img.size.x + x]));// -min) / (max - min);
+                        const auto v = imgAsComplexArray[y * img.size.x + x];
+                        img(y, x) = (std::sqrt((v.real() * v.real()) + (v.imag() * v.imag())) - min) / (max - min);
                     }
                 }
 
                 // Move zero-frequency to the center
-                shift_fft(img);
+                shift_fft_image(img);
 
                 // Re-center
                 image_buffer<float, 1> centered(img.size);
-                center_fft(img, centered);
+                center_fft_image(img, centered);
 
                 loadedTexture->set_size({ img.size.x, img.size.y });
                 upload_luminance(*loadedTexture.get(), centered);
