@@ -208,7 +208,7 @@ inline void upload_png(texture_buffer & buffer, std::vector<uint8_t> & binaryDat
     buffer.set_size({ width, height });
 }
 
-inline void upload_dxt(texture_buffer & buffer, const gli::texture & t)
+inline void upload_dds(texture_buffer & buffer, const gli::texture & t)
 {
     for (std::size_t l = 0; l < t.levels(); ++l)
     {
@@ -220,6 +220,34 @@ inline void upload_dxt(texture_buffer & buffer, const gli::texture & t)
         glTextureImage2DEXT(buffer.handle(), GL_TEXTURE_2D, GLint(l), Format.Internal, w, h, 0, Format.External, Format.Type, t.data(0, 0, l));
         if (l == 0) buffer.set_size({ w, h });
     }
+}
+
+image_buffer<float, 1> png_to_luminance(std::vector<uint8_t> & binaryData)
+{
+    int width, height, nBytes;
+    auto data = stbi_load_from_memory(binaryData.data(), (int)binaryData.size(), &width, &height, &nBytes, 0);
+ 
+    image_buffer<float, 1> buffer({ width, height });
+
+    std::cout << "Num Channels: " << nBytes << std::endl;
+
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; ++x)
+        {
+            const float r = as_float<uint8_t>(data[nBytes * (y * width + x) + 0]);
+            const float g = as_float<uint8_t>(data[nBytes * (y * width + x) + 1]);
+            const float b = as_float<uint8_t>(data[nBytes * (y * width + x) + 2]);
+            buffer(y, x) = to_luminance(r, b, b);
+        }
+    }
+    stbi_image_free(data);
+    return buffer;
+}
+
+void upload_luminance(texture_buffer & buffer, image_buffer<float, 1> & imgData)
+{
+    glTextureImage2DEXT(buffer.handle(), GL_TEXTURE_2D, 0, GL_RGB, imgData.size.x, imgData.size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, imgData.data.get());
 }
 
 void draw_texture_buffer(float rx, float ry, float rw, float rh, const texture_buffer & buffer)
@@ -278,12 +306,14 @@ int main(int argc, char * argv[])
 
             if (ext == "png")
             {
-                upload_png(*loadedTexture.get(), data, false);
+                //upload_png(*loadedTexture.get(), data, false);
+                auto luminanceImageBuffer = png_to_luminance(data);
+                upload_luminance(*loadedTexture.get(), luminanceImageBuffer);
             }
             else if (ext == "dds")
             {
                 gli::texture imgHandle(gli::load_dds((char *)data.data(), data.size()));
-                upload_dxt(*loadedTexture.get(), imgHandle);
+                upload_dds(*loadedTexture.get(), imgHandle);
             }
             else
             {
