@@ -275,14 +275,13 @@ void draw_texture_buffer(float rx, float ry, float rw, float rh, const texture_b
 
 // In place
 
-/*
-void compute_fft_2d(std::complex<float> * data, const int width, const int height) const
+void compute_fft_2d(std::complex<float> * data, const int width, const int height) 
 {
     std::vector<std::complex<float>> output = std::vector<std::complex<float>>(width * height);
 
     bool inverse = false;
     kissfft<float> xFFT(width, inverse);
-    //kissfft<float> yFFT(height, inverse);
+    kissfft<float> yFFT(height, inverse);
 
     std::vector<std::complex<float>> xTmp = std::vector<std::complex<float>>(std::max(width, height));
     std::vector<std::complex<float>> yTmp = std::vector<std::complex<float>>(std::max(width, height));
@@ -296,20 +295,15 @@ void compute_fft_2d(std::complex<float> * data, const int width, const int heigh
         for (int x = 0; x < width; x++) output[y * width + x] = xTmp[x];
     }
 
-    /*
-
     // Compute FFT on Y axis
     for (int x = 0; x < width; x++)
     {
-    // For data locality, create a 1d src "row" out of the Y column
-    for (int y = 0; y < height; y++) ySrc[y] = data[y * width + x];
-    yFFT.transform(ySrc, yTmp);
-    for (int y = 0; y < height; y++) data[y * width + x] = yTmp[y];
+        // For data locality, create a 1d src "row" out of the Y column
+        for (int y = 0; y < height; y++) ySrc[y] = data[y * width + x];
+        yFFT.transform(ySrc.data(), yTmp.data());
+        for (int y = 0; y < height; y++) data[y * width + x] = yTmp[y];
     }
 }
-*/
-
-
 
 //////////////////////////
 //   Main Application   //
@@ -366,7 +360,7 @@ int main(int argc, char * argv[])
                     }
                 }
 
-                //compute_fft_2d(imgAsComplexArray, img.size.x, img.size.y);
+                compute_fft_2d(imgAsComplexArray, img.size.x, img.size.y);
 
                 // Normalize the image
                 float min = std::abs(imgAsComplexArray[0]), max = min;

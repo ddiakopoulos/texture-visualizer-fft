@@ -318,7 +318,7 @@ private:
     ) const
     {
         const cpx_t * twiddles = &_twiddles[0];
-        cpx_t scratchbuf[p];
+        cpx_t *  scratchbuf = new cpx_t[p];
 
         for (std::size_t u = 0; u<m; ++u) {
             std::size_t k = u;
@@ -340,6 +340,7 @@ private:
                 k += m;
             }
         }
+        delete scratchbuf;
     }
 
     std::size_t _nfft;
