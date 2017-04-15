@@ -145,6 +145,7 @@ std::unique_ptr<Window> win;
 class texture_buffer
 {
     GLuint tex;
+    int2 size;
 public:
 
     texture_buffer() : tex(-1)
@@ -155,13 +156,11 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    ~texture_buffer()
-    {
-        if (tex) glDeleteBuffers(1, &tex);
-    }
-
+    ~texture_buffer() { if (tex) glDeleteBuffers(1, &tex); }
+    void set_size(int2 s) { size = s; }
     GLuint handle() const { return tex; }
 };
 
@@ -196,6 +195,7 @@ inline void upload_png(texture_buffer & buffer, const std::string & path, bool f
     default: throw std::runtime_error("unsupported number of channels");
     }
     stbi_image_free(data);
+    buffer.set_size({ width, height });
 }
 
 
@@ -209,6 +209,7 @@ inline void upload_dxt(texture_buffer & buffer, const gli::texture & t)
         gli::gl::format const Format = GL.translate(t.format(), t.swizzles());
         GLenum Target = GL.translate(t.target());
         glTextureImage2DEXT(buffer.handle(), GL_TEXTURE_2D, GLint(l), Format.Internal, w, h, 0, Format.External, Format.Type, t.data(0, 0, l));
+        if (l == 0) buffer.set_size({ w, h });
     }
 }
 
