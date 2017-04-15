@@ -274,8 +274,45 @@ void draw_texture_buffer(float rx, float ry, float rw, float rh, const texture_b
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-// In place
+inline void shift_fft(image_buffer<float, 1> & data)
+{
+    float max, min;
+    max = min = data(0, 0);
 
+    auto apply = [&](std::function<void(int i, int j)> f) {
+        for (int i = 0; i < data.size.y; i++) for (int j = 0; j < data.size.x; j++) f(i, j);
+    };
+
+    apply([&](int i, int j) { if (data(i, j) < min) min = data(i, j); });
+    apply([&](int i, int j) { data(i, j) -= min; });
+    apply([&](int i, int j) { if (data(i, j) > max) max = data(i, j); });
+    apply([&](int i, int j) { data(i, j) *= (255.f / max); });
+}
+
+void center_fft(image_buffer<float, 1> & in, image_buffer<float, 1> & out)
+{
+    const int halfWidth = in.size.x / 2;
+    const int halfHeight = in.size.y / 2;
+
+    for (int i = 0; i < in.size.y; i++)
+    {
+        for (int j = 0; j < in.size.x; j++)
+        {
+            if (i < halfHeight)
+            {
+                if (j < halfWidth) out(i, j) = in(i + halfHeight, j + halfWidth);
+                else out(i, j) = in(i + halfWidth, j - halfWidth);
+            }
+            else 
+            {
+                if (j < halfWidth) out(i, j) = in(i - halfHeight, j + halfWidth);
+                else  out(i, j) = in(i - halfHeight, j - halfWidth);
+            }
+        }
+    }
+}
+
+// In place
 void compute_fft_2d(std::complex<float> * data, const int width, const int height) 
 {
     bool inverse = false;
@@ -379,8 +416,15 @@ int main(int argc, char * argv[])
                     }
                 }
 
-                upload_luminance(*loadedTexture.get(), img);
+                // Move zero-frequency to the center
+                shift_fft(img);
+
+                // Re-center
+                image_buffer<float, 1> centered(img.size);
+                center_fft(img, centered);
+
                 loadedTexture->set_size({ img.size.x, img.size.y });
+                upload_luminance(*loadedTexture.get(), centered);
             }
             else if (ext == "dds")
             {
