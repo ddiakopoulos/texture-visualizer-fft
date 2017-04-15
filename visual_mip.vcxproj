@@ -20,8 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="third-party\kissfft\src\kiss_fft.cpp" />
-    <ClCompile Include="third-party\kissfft\src\kiss_fftr.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="third-party\glfw-3.1.2\glfw3.vcxproj">
@@ -30,8 +28,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="third-party\kissfft\kissfft.hpp" />
-    <ClInclude Include="third-party\kissfft\kiss_fft.hpp" />
-    <ClInclude Include="third-party\kissfft\kiss_fftr.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E8595BE1-022E-46B2-9079-A12C655C5E4B}</ProjectGuid>
@@ -105,7 +101,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)third-party;$(SolutionDir)third-party\glew;$(SolutionDir)third-party\glfw-3.1.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)third-party\glew\lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -118,7 +114,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)third-party;$(SolutionDir)third-party\glew;$(SolutionDir)third-party\glfw-3.1.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)third-party\glew\lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -133,7 +129,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)third-party;$(SolutionDir)third-party\glew;$(SolutionDir)third-party\glfw-3.1.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -150,7 +146,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)third-party;$(SolutionDir)third-party\glew;$(SolutionDir)third-party\glfw-3.1.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

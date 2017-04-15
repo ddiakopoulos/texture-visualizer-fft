@@ -15,20 +15,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="third-party\kissfft\src\kiss_fft.cpp">
-      <Filter>third-party\kiss-fft\src</Filter>
-    </ClCompile>
-    <ClCompile Include="third-party\kissfft\src\kiss_fftr.cpp">
-      <Filter>third-party\kiss-fft\src</Filter>
-    </ClCompile>
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="third-party\kissfft\kiss_fft.hpp">
-      <Filter>third-party\kiss-fft\include</Filter>
-    </ClInclude>
-    <ClInclude Include="third-party\kissfft\kiss_fftr.hpp">
-      <Filter>third-party\kiss-fft\include</Filter>
-    </ClInclude>
     <ClInclude Include="third-party\kissfft\kissfft.hpp">
       <Filter>third-party\kiss-fft\include</Filter>
     </ClInclude>

@@ -10,8 +10,6 @@
 
 #include "linalg_util.hpp"
 
-#define _CRT_SECURE_NO_WARNINGS
-
 #include "gli/gli.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -30,9 +28,6 @@
 #include "GLFW\glfw3.h"
 
 #include "kissfft/kissfft.hpp"
-#include "kissfft/kiss_fft.hpp"
-#include "kissfft/kiss_fftr.hpp"
-using namespace kissfft_utils;
 
 inline void draw_text(int x, int y, const char * text)
 {
@@ -72,7 +67,7 @@ inline std::vector<uint8_t> read_file_binary(const std::string pathToFile)
 
 inline float to_luminance(float r, float g, float b)
 {
-    return 0.2126f * r + 0.7152f * g + 0.0722 * b;
+    return 0.2126f * r + 0.7152f * g + 0.0722f * b;
 }
 
 template<class T> 
@@ -279,36 +274,42 @@ void draw_texture_buffer(float rx, float ry, float rw, float rh, const texture_b
 }
 
 // In place
-void compute_fft_2d(std::complex<float> * data, int width, int height)
+
+/*
+void compute_fft_2d(std::complex<float> * data, const int width, const int height) const
 {
+    std::vector<std::complex<float>> output = std::vector<std::complex<float>>(width * height);
+
     bool inverse = false;
     kissfft<float> xFFT(width, inverse);
-    kissfft<float> yFFT(height, inverse);
+    //kissfft<float> yFFT(height, inverse);
 
-    std::complex<float> * xTmp = new std::complex<float>[std::max(width, height)];
-    std::complex<float> * yTmp = new std::complex<float>[std::max(width, height)];
-    std::complex<float> * ySrc = new std::complex<float>[height];
+    std::vector<std::complex<float>> xTmp = std::vector<std::complex<float>>(std::max(width, height));
+    std::vector<std::complex<float>> yTmp = std::vector<std::complex<float>>(std::max(width, height));
+    std::vector<std::complex<float>> ySrc = std::vector<std::complex<float>>(height);
 
     // Compute FFT on X axis
-    for (int y = 0; y < width; ++y)
+    for (int y = 0; y < height; ++y)
     {
-        xFFT.transform(&data[width * height], xTmp);
-        for (int x = 0; x < width; x++) data[y * width + x] = xTmp[x];
+        const std::complex<float> * inputRow = &data[y * width];
+        xFFT.transform(inputRow, xTmp.data(), 0, 1, 1);
+        for (int x = 0; x < width; x++) output[y * width + x] = xTmp[x];
     }
+
+    /*
 
     // Compute FFT on Y axis
     for (int x = 0; x < width; x++)
     {
-        // For data locality, create a 1d src "row" out of the Y column
-        for (int y = 0; y < height; y++) ySrc[y] = data[y * width + x];
-        yFFT.transform(ySrc, yTmp);
-        for (int y = 0; y < height; y++) data[y * width + x] = yTmp[y];
+    // For data locality, create a 1d src "row" out of the Y column
+    for (int y = 0; y < height; y++) ySrc[y] = data[y * width + x];
+    yFFT.transform(ySrc, yTmp);
+    for (int y = 0; y < height; y++) data[y * width + x] = yTmp[y];
     }
-
-    delete ySrc;
-    delete yTmp;
-    delete xTmp;
 }
+*/
+
+
 
 //////////////////////////
 //   Main Application   //
@@ -365,11 +366,27 @@ int main(int argc, char * argv[])
                     }
                 }
 
-                compute_fft_2d(imgAsComplexArray, img.size.x, img.size.y);
+                //compute_fft_2d(imgAsComplexArray, img.size.x, img.size.y);
 
-                // convert back to image type
+                // Normalize the image
+                float min = std::abs(imgAsComplexArray[0]), max = min;
+                for (int i = 0; i < img.size.x * img.size.y; i++) 
+                {
+                    float value = std::abs(imgAsComplexArray[i]);
+                    min = std::min(min, value);
+                    max = std::max(max, value);
+                }
 
-                //upload_luminance(*loadedTexture.get(), luminanceImageBuffer);
+                // Convert back to image type
+                for (int y = 0; y < img.size.y; y++)
+                {
+                    for (int x = 0; x < img.size.x; x++)
+                    {
+                        img(y, x) = (std::abs(imgAsComplexArray[y * img.size.x + x]) - min) / (max - min);
+                    }
+                }
+
+                upload_luminance(*loadedTexture.get(), img);
 
                 delete imgAsComplexArray;
 
