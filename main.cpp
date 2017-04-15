@@ -238,7 +238,7 @@ image_buffer<float, 1> png_to_luminance(std::vector<uint8_t> & binaryData)
             const float r = as_float<uint8_t>(data[nBytes * (y * width + x) + 0]);
             const float g = as_float<uint8_t>(data[nBytes * (y * width + x) + 1]);
             const float b = as_float<uint8_t>(data[nBytes * (y * width + x) + 2]);
-            buffer(y, x) = to_luminance(r, b, b);
+            buffer(y, x) = to_luminance(r, g, b);
         }
     }
     stbi_image_free(data);
