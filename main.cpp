@@ -281,9 +281,9 @@ void compute_fft_2d(std::complex<float> * data, const int width, const int heigh
     kissfft<float> xFFT(width, inverse);
     kissfft<float> yFFT(height, inverse);
 
-    std::vector<std::complex<float>> xTmp = std::vector<std::complex<float>>(std::max(width, height));
-    std::vector<std::complex<float>> yTmp = std::vector<std::complex<float>>(std::max(width, height));
-    std::vector<std::complex<float>> ySrc = std::vector<std::complex<float>>(height);
+    std::vector<std::complex<float>> xTmp(std::max(width, height));
+    std::vector<std::complex<float>> yTmp(std::max(width, height));
+    std::vector<std::complex<float>> ySrc(height);
 
     // Compute FFT on X axis
     for (int y = 0; y < height; ++y)
@@ -348,7 +348,7 @@ int main(int argc, char * argv[])
 
                 auto img = png_to_luminance(data);
                 float mean = img.compute_mean();
-                std::complex<float> * imgAsComplexArray = new std::complex<float>[img.size.x * img.size.y];
+                std::vector<std::complex<float>>imgAsComplexArray(img.size.x * img.size.y);
 
                 for (int y = 0; y < img.size.y; y++)
                 {
@@ -358,7 +358,7 @@ int main(int argc, char * argv[])
                     }
                 }
 
-                compute_fft_2d(imgAsComplexArray, img.size.x, img.size.y);
+                compute_fft_2d(imgAsComplexArray.data(), img.size.x, img.size.y);
 
                 // Normalize the image
                 float min = std::abs(imgAsComplexArray[0]), max = min;
@@ -379,9 +379,6 @@ int main(int argc, char * argv[])
                 }
 
                 upload_luminance(*loadedTexture.get(), img);
-
-                delete imgAsComplexArray;
-
             }
             else if (ext == "dds")
             {
