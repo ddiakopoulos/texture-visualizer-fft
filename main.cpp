@@ -277,6 +277,12 @@ void draw_texture_buffer(float rx, float ry, float rw, float rh, const texture_b
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+// In place
+void compute_fft_2d(std::complex<float> * data, int width, int height)
+{
+
+}
+
 //////////////////////////
 //   Main Application   //
 //////////////////////////
@@ -319,6 +325,7 @@ int main(int argc, char * argv[])
             if (ext == "png")
             {
                 //upload_png(*loadedTexture.get(), data, false);
+
                 auto img = png_to_luminance(data);
                 float mean = img.compute_mean();
                 std::complex<float> * imgAsComplexArray = new std::complex<float>[img.size.x * img.size.y];
@@ -330,6 +337,10 @@ int main(int argc, char * argv[])
                         imgAsComplexArray[y * img.size.x + x] = img(y, x) - mean;
                     }
                 }
+
+                compute_fft_2d(imgAsComplexArray, img.size.x, img.size.y);
+
+                // convert back to image type
 
                 //upload_luminance(*loadedTexture.get(), luminanceImageBuffer);
 
