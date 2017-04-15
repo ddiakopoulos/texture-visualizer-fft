@@ -63,6 +63,19 @@ inline std::vector<uint8_t> read_file_binary(const std::string pathToFile)
     return fileBuffer;
 }
 
+inline float to_luminance(float r, float g, float b)
+{
+    return 0.2126f * r + 0.7152f * g + 0.0722 * b;
+}
+
+template<class T> 
+inline float as_float(const T & x)
+{
+    const float min = std::numeric_limits<T>::min();
+    const float max = std::numeric_limits<T>::max();
+    return 2.0 * (x - min) / (max - min) - 1.0;
+}
+
 class Window
 {
     GLFWwindow * window;
@@ -197,7 +210,6 @@ inline void upload_png(texture_buffer & buffer, const std::string & path, bool f
     stbi_image_free(data);
     buffer.set_size({ width, height });
 }
-
 
 inline void upload_dxt(texture_buffer & buffer, const gli::texture & t)
 {
