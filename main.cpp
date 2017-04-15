@@ -174,6 +174,7 @@ public:
 
     ~texture_buffer() { if (tex) glDeleteBuffers(1, &tex); }
     void set_size(int2 s) { size = s; }
+    int2 get_size() const { return size; }
     GLuint handle() const { return tex; }
 };
 
@@ -379,6 +380,7 @@ int main(int argc, char * argv[])
                 }
 
                 upload_luminance(*loadedTexture.get(), img);
+                loadedTexture->set_size({ img.size.x, img.size.y });
             }
             else if (ext == "dds")
             {
@@ -411,7 +413,7 @@ int main(int argc, char * argv[])
 
         if (loadedTexture.get())
         {
-            draw_texture_buffer(0, 0, windowSize.x / 2, windowSize.y / 2, *loadedTexture.get());
+            draw_texture_buffer(0, 0, loadedTexture->get_size().x, loadedTexture->get_size().y, *loadedTexture.get());
         }
 
         draw_text(10, 16, loadedFilePath.c_str());
