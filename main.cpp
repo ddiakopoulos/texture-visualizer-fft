@@ -169,13 +169,14 @@ template <typename T, int C>
 struct image_buffer
 {
     std::shared_ptr<T> data;
-    float2 size;
+    const int2 size;
     T * alias;
     struct delete_array { void operator()(T const * p) { delete[] p; } };
-    image_buffer(float2 size) : size(size), data(new T[size.x * size.y * C], delete_array())
-    {
-        alias = data.get();
-    }
+    image_buffer(const int2 size) : size(size), data(new T[size.x * size.y * C], delete_array()) { alias = data.get(); }
+    int size_bytes() const { return C * size.x * size.y * sizeof(T); }
+    int num_pixels() const { return size.x * size.y; }
+    T & operator()(int y, int x) { return alias[y * size.x + x]; }
+    T & operator()(int y, int x, int channel) { return alias[C * (y * size.x + x) + channel]; }
 };
 
 inline void upload_png(texture_buffer & buffer, const std::string & path, bool flip = false)
@@ -229,7 +230,7 @@ std::unique_ptr<texture_buffer> loadedTexture;
 
 int main(int argc, char * argv[])
 {
-    image_buffer<uint8_t, 1> sample({ 100.f, 100.f });
+    image_buffer<uint8_t, 1> sample({ 100, 100 });
 
     try
     {
