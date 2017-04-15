@@ -5,6 +5,8 @@
 #include <chrono>
 #include <vector>
 #include <stdint.h>
+#include <complex>
+#include <type_traits>
 
 #include "linalg_util.hpp"
 
@@ -26,6 +28,10 @@
 
 #define GLFW_INCLUDE_GLU
 #include "GLFW\glfw3.h"
+
+#include "kissfft/kissfft.hpp"
+#include "kissfft/kiss_fft.hpp"
+#include "kissfft/kiss_fftr.hpp"
 
 inline void draw_text(int x, int y, const char * text)
 {
@@ -313,9 +319,22 @@ int main(int argc, char * argv[])
             if (ext == "png")
             {
                 //upload_png(*loadedTexture.get(), data, false);
-                auto luminanceImageBuffer = png_to_luminance(data);
-                std::cout << "Mean: " << luminanceImageBuffer.compute_mean() << std::endl;
-                upload_luminance(*loadedTexture.get(), luminanceImageBuffer);
+                auto img = png_to_luminance(data);
+                float mean = img.compute_mean();
+                std::complex<float> * imgAsComplexArray = new std::complex<float>[img.size.x * img.size.y];
+
+                for (int y = 0; y < img.size.y; y++)
+                {
+                    for (int x = 0; x < img.size.x; x++)
+                    {
+                        imgAsComplexArray[y * img.size.x + x] = img(y, x) - mean;
+                    }
+                }
+
+                //upload_luminance(*loadedTexture.get(), luminanceImageBuffer);
+
+                delete imgAsComplexArray;
+
             }
             else if (ext == "dds")
             {
