@@ -36,6 +36,13 @@ inline void draw_text(int x, int y, const char * text)
     glDisableClientState(GL_VERTEX_ARRAY);
 }
 
+std::string get_extension(const std::string & path)
+{
+    auto found = path.find_last_of('.');
+    if (found == std::string::npos) return "";
+    else return path.substr(found + 1);
+}
+
 inline std::vector<uint8_t> read_file_binary(const std::string pathToFile)
 {
     FILE * f = fopen(pathToFile.c_str(), "rb");
@@ -159,14 +166,14 @@ public:
     {
         glBindTexture(GL_TEXTURE_2D, tex);
 
-        for (std::size_t Level = 0; Level < 1; ++Level)
+        for (std::size_t l = 0; l < t.levels(); ++l)
         {
-            GLsizei w = (t.extent(Level).x), h = (t.extent(Level).y);
+            GLsizei w = (t.extent(l).x), h = (t.extent(l).y);
             std::cout << w << ", " << h << std::endl;
             gli::gl GL(gli::gl::PROFILE_GL33);
             gli::gl::format const Format = GL.translate(t.format(), t.swizzles());
             GLenum Target = GL.translate(t.target());
-            glTextureImage2DEXT(tex, GL_TEXTURE_2D, GLint(Level), Format.Internal, w, h, 0, Format.External, Format.Type, t.data(0, 0, Level));
+            glTextureImage2DEXT(tex, GL_TEXTURE_2D, GLint(l), Format.Internal, w, h, 0, Format.External, Format.Type, t.data(0, 0, l));
         }
         glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -229,7 +236,10 @@ int main(int argc, char * argv[])
 
             // todo: check extension
 
-            std::cout << "Dropped " << paths[f] << std::endl;
+            auto ext = get_extension(paths[f]);
+
+            // Draw as text
+            // std::cout << "Dropped " <<  << std::endl;
 
             std::vector<uint8_t> data;
 
@@ -242,10 +252,19 @@ int main(int argc, char * argv[])
                 std::cout << "Couldn't read file: " << e.what() << std::endl;
             }
 
-            gli::texture imgHandle(gli::load_dds((char *)data.data(), data.size()));
-            loadedTexture->upload(imgHandle);
-
-            //loadedTexture->load_png(paths[f], false);
+            if (ext == "png")
+            {
+                load_png(*loadedTexture.get(), paths[f], false);
+            }
+            else if (ext == "dxt")
+            {
+                gli::texture imgHandle(gli::load_dds((char *)data.data(), data.size()));
+                loadedTexture->upload(imgHandle);
+            }
+            else
+            {
+                std::cout << "Unsupported file format" << std::endl;
+            }
         }
     };
 
