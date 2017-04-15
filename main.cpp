@@ -273,7 +273,7 @@ std::unique_ptr<Window> win;
 
 int main(int argc, char * argv[])
 {
-    image_buffer<uint8_t, 1> sample({ 100, 100 });
+    std::string loadedFilePath;
 
     try
     {
@@ -284,7 +284,7 @@ int main(int argc, char * argv[])
         std::cout << "Caught GLFW window exception: " << e.what() << std::endl;
     }
 
-    win->on_drop = [](int numFiles, const char ** paths)
+    win->on_drop = [&](int numFiles, const char ** paths)
     {
         for (int f = 0; f < numFiles; f++)
         {
@@ -292,8 +292,7 @@ int main(int argc, char * argv[])
             const auto ext = get_extension(paths[f]);
             std::vector<uint8_t> data;
 
-            // Draw as text
-            // std::cout << "Dropped " <<  << std::endl;
+            loadedFilePath = paths[f];
 
             try
             {
@@ -338,12 +337,13 @@ int main(int argc, char * argv[])
         glPushMatrix();
 
         glOrtho(0, windowSize.x, windowSize.y, 0, -1, +1);
-        draw_text(10, 10, "Hello World");
 
         if (loadedTexture.get())
         {
             draw_texture_buffer(0, 0, windowSize.x / 2, windowSize.y / 2, *loadedTexture.get());
         }
+
+        draw_text(10, 16, loadedFilePath.c_str());
 
         glPopMatrix();
 
