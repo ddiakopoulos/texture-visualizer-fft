@@ -277,8 +277,6 @@ void draw_texture_buffer(float rx, float ry, float rw, float rh, const texture_b
 
 void compute_fft_2d(std::complex<float> * data, const int width, const int height) 
 {
-    std::vector<std::complex<float>> output = std::vector<std::complex<float>>(width * height);
-
     bool inverse = false;
     kissfft<float> xFFT(width, inverse);
     kissfft<float> yFFT(height, inverse);
@@ -291,8 +289,8 @@ void compute_fft_2d(std::complex<float> * data, const int width, const int heigh
     for (int y = 0; y < height; ++y)
     {
         const std::complex<float> * inputRow = &data[y * width];
-        xFFT.transform(inputRow, xTmp.data(), 0, 1, 1);
-        for (int x = 0; x < width; x++) output[y * width + x] = xTmp[x];
+        xFFT.transform(inputRow, xTmp.data());
+        for (int x = 0; x < width; x++) data[y * width + x] = xTmp[x];
     }
 
     // Compute FFT on Y axis
@@ -376,7 +374,7 @@ int main(int argc, char * argv[])
                 {
                     for (int x = 0; x < img.size.x; x++)
                     {
-                        img(y, x) = (std::abs(imgAsComplexArray[y * img.size.x + x]) - min) / (max - min);
+                        img(y, x) = (std::abs(imgAsComplexArray[y * img.size.x + x]));// -min) / (max - min);
                     }
                 }
 
