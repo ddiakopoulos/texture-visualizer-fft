@@ -19,6 +19,7 @@
 
 #include "kissfft/kissfft.hpp"
 
+// Todo
 // image pyramid for mips, generate mips
 // cleanup all size.x, size.y types
 
@@ -89,9 +90,6 @@ inline void upload_png(texture_buffer & buffer, std::vector<uint8_t> & binaryDat
 
 inline void upload_dds(texture_buffer & buffer, std::vector<uint8_t> & binaryData)
 {
-    //std::cout << w << ", " << h << std::endl;
-    //std::cout << gli::is_compressed(t.format()) << std::endl;
-
     gli::texture t(gli::load_dds((char *)binaryData.data(), binaryData.size()));
 
     for (std::size_t l = 0; l < t.levels(); ++l)
@@ -111,8 +109,6 @@ image_buffer<float, 1> png_to_luminance(std::vector<uint8_t> & binaryData)
     auto data = stbi_load_from_memory(binaryData.data(), (int)binaryData.size(), &width, &height, &nBytes, 0);
  
     image_buffer<float, 1> buffer({ width, height });
-
-    std::cout << "Num Channels: " << nBytes << std::endl;
 
     for (int y = 0; y < height; y++)
     {
@@ -210,7 +206,7 @@ std::unique_ptr<Window> win;
 
 int main(int argc, char * argv[])
 {
-    std::string loadedFilePath("No file currently loaded...");
+    std::string status("No file currently loaded...");
 
     try
     {
@@ -225,11 +221,10 @@ int main(int argc, char * argv[])
     {
         for (int f = 0; f < numFiles; f++)
         {
-            loadedTexture.reset(new texture_buffer()); // gen handle
-            const auto ext = get_extension(paths[f]);
             std::vector<uint8_t> data;
-
-            loadedFilePath = paths[f];
+            loadedTexture.reset(new texture_buffer()); // gen handle
+            const std::string fileExtension = get_extension(paths[f]);
+            status = paths[f];
 
             try
             {
@@ -237,16 +232,16 @@ int main(int argc, char * argv[])
             }
             catch (const std::exception & e)
             {
-                loadedFilePath = std::string("Couldn't read file: ") + e.what();
+                status = std::string("Couldn't read file: ") + e.what();
             }
 
-            if (ext == "png" || ext == "PNG")
+            if (fileExtension == "png" || fileExtension == "PNG")
             {
                 auto img = png_to_luminance(data);
 
                 if (!is_power_of_two(img.size.x) || !is_power_of_two(img.size.y))
                 {
-                    loadedFilePath = "Image size is not a power of two";
+                    status = "Image size is not a power of two";
                     return;
                 }
 
@@ -294,13 +289,13 @@ int main(int argc, char * argv[])
                 loadedTexture->size = { img.size.x, img.size.y };
                 upload_luminance(*loadedTexture.get(), centered);
             }
-            else if (ext == "dds")
+            else if (fileExtension == "dds")
             {
                 upload_dds(*loadedTexture.get(), data);
             }
             else
             {
-                std::cout << "Unsupported file format" << std::endl;
+                status = "Unsupported file format";
             }
         }
     };
@@ -327,7 +322,7 @@ int main(int argc, char * argv[])
             draw_texture_buffer(0, 0, loadedTexture->size.x, loadedTexture->size.y, *loadedTexture.get());
         }
 
-        draw_text(10, 16, loadedFilePath.c_str());
+        draw_text(10, 16, status.c_str());
 
         glPopMatrix();
 
