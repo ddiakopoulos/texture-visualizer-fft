@@ -214,30 +214,41 @@ std::unique_ptr<Window> win;
 */
 
 template <typename T, int C>
-struct image_buffer_pyramid
+class image_buffer_pyramid
 {
+    void build_dimensions(std::vector<int2> & levels, int size)
+    {
+        if (size == 2)
+        {
+            levels.push_back({ 1, 1 });
+            return;
+        }
+        levels.push_back({ size, size });
+        build_dimensions(levels, size / 2);
+    }
+
+    std::vector<image_buffer<T, C>> pyramid;
+
+public:
+
+    image_buffer_pyramid(const int size)
+    {
+        std::vector<int2> levels;
+        build_dimensions(levels, size);
+        for (auto l : levels) pyramid.push_back(image_buffer<T, C>(l));
+    }
+
     image_buffer<T, C> & level(const int level)
     {
         assert(level < pyramid.size());
         return pyramid[level];
     }
-    std::vector<image_buffer<T, C>> pyramid;
-};
 
-inline void build_pyramid_dimensions(std::vector<int2> & dimensions, int size)
-{
-    if (size == 2)
-    {
-        dimensions.push_back({ 1, 1 });
-        return;
-    }
-    dimensions.push_back({ size, size});
-    build_pyramid_dimensions(dimensions, size / 2);
-}
+};
 
 int main(int argc, char * argv[])
 {
-    image_buffer_pyramid<float, 1> pyramid;
+    image_buffer_pyramid<float, 1> pyramid(512);
 
     std::string status("No file currently loaded...");
 
