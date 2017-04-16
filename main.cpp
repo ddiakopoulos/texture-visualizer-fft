@@ -224,7 +224,7 @@ class image_buffer_pyramid
         build_dimensions(levels, size / 2);
     }
 
-    std::vector<image_buffer<T, C>> pyramid;
+    std::vector<std::shared_ptr<image_buffer<T, C>>> pyramid;
 
 public:
 
@@ -232,13 +232,13 @@ public:
     {
         std::vector<int2> levels;
         build_dimensions(levels, size);
-        for (auto l : levels) pyramid.emplace_back(image_buffer<T, C>(l));
+        for (auto l : levels) pyramid.emplace_back(std::make_shared<image_buffer<T, C>>(l));
     }
 
     image_buffer<T, C> & level(const int level)
     {
         assert(level < pyramid.size());
-        return pyramid[level];
+        return *pyramid[level];
     }
 };
 
