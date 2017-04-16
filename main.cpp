@@ -207,6 +207,23 @@ void compute_fft_2d(std::complex<float> * data, const int2 & size, const bool in
 std::unique_ptr<texture_buffer> loadedTexture;
 std::unique_ptr<Window> win;
 
+/*
+    std::vector<int2> pyramidSizes;
+    build_pyramid_dimensions(pyramidSizes, 512);
+    for (auto s : pyramidSizes) std::cout << s << std::endl;
+*/
+
+template <typename T, int C>
+struct image_buffer_pyramid
+{
+    image_buffer<T, C> & level(const int level)
+    {
+        assert(level < pyramid.size());
+        return pyramid[level];
+    }
+    std::vector<image_buffer<T, C>> pyramid;
+};
+
 inline void build_pyramid_dimensions(std::vector<int2> & dimensions, int size)
 {
     if (size == 2)
@@ -220,6 +237,8 @@ inline void build_pyramid_dimensions(std::vector<int2> & dimensions, int size)
 
 int main(int argc, char * argv[])
 {
+    image_buffer_pyramid<float, 1> pyramid;
+
     std::string status("No file currently loaded...");
 
     try
@@ -308,10 +327,6 @@ int main(int argc, char * argv[])
             }
         }
     };
-
-    std::vector<int2> pyramidSizes;
-    build_pyramid_dimensions(pyramidSizes, 512);
-    for (auto s : pyramidSizes) std::cout << s << std::endl;
 
     auto t0 = std::chrono::high_resolution_clock::now();
     while (!win->should_close())
