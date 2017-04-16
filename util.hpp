@@ -31,6 +31,11 @@ inline float as_float(const T & x)
     return (x - min) / (max - min);
 }
 
+inline bool is_power_of_two(const int & n) 
+{
+    return n > 0 && (n & (n - 1)) == 0;
+}
+
 /////////////////////////
 //   File Operations   //
 /////////////////////////

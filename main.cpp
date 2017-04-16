@@ -19,11 +19,8 @@
 
 #include "kissfft/kissfft.hpp"
 
-// enforce size of two
-// image pyramid for mips
+// image pyramid for mips, generate mips
 // cleanup all size.x, size.y types
-// generate mips
-// get rid of older load functions
 
 inline void draw_text(int x, int y, const char * text)
 {
@@ -238,12 +235,18 @@ int main(int argc, char * argv[])
             }
             catch (const std::exception & e)
             {
-                std::cout << "Couldn't read file: " << e.what() << std::endl;
+                loadedFilePath = std::string("Couldn't read file: ") + e.what();
             }
 
             if (ext == "png")
             {
                 auto img = png_to_luminance(data);
+
+                if (!is_power_of_two(img.size.x) || !is_power_of_two(img.size.y))
+                {
+                    loadedFilePath = "Image size is not a power of two";
+                    return;
+                }
 
                 // Resize window
                 int2 existingWindowSize = win->get_window_size();
