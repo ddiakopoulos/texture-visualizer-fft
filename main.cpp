@@ -207,12 +207,6 @@ void compute_fft_2d(std::complex<float> * data, const int2 & size, const bool in
 std::unique_ptr<texture_buffer> loadedTexture;
 std::unique_ptr<Window> win;
 
-/*
-    std::vector<int2> pyramidSizes;
-    build_pyramid_dimensions(pyramidSizes, 512);
-    for (auto s : pyramidSizes) std::cout << s << std::endl;
-*/
-
 template <typename T, int C>
 class image_buffer_pyramid
 {
@@ -243,8 +237,9 @@ public:
         assert(level < pyramid.size());
         return pyramid[level];
     }
-
 };
+
+bool should_take_screenshot = false;
 
 int main(int argc, char * argv[])
 {
@@ -260,6 +255,11 @@ int main(int argc, char * argv[])
     {
         std::cout << "Caught GLFW window exception: " << e.what() << std::endl;
     }
+
+    win->on_key = [&](int key, int action, int mods)
+    {
+        if (key == ' ' && action == GLFW_RELEASE) should_take_screenshot = true;
+    };
 
     win->on_drop = [&](int numFiles, const char ** paths)
     {
@@ -359,6 +359,11 @@ int main(int argc, char * argv[])
         if (loadedTexture.get())
         {
             draw_texture_buffer(0, 0, loadedTexture->size.x, loadedTexture->size.y, *loadedTexture.get());
+        }
+
+        if (should_take_screenshot)
+        {
+            should_take_screenshot = take_screenshot(loadedTexture->size);
         }
 
         draw_text(10, 16, status.c_str());

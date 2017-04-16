@@ -71,6 +71,17 @@ inline std::vector<uint8_t> read_file_binary(const std::string pathToFile)
 //   Windowing & App Lifecycle   //
 ///////////////////////////////////
 
+inline bool take_screenshot(int2 size)
+{
+    std::string timestamp = "fft";
+    std::vector<uint8_t> screenShot(size.x * size.y * 3);
+    glReadPixels(0, 0, size.x, size.y, GL_RGB, GL_UNSIGNED_BYTE, screenShot.data());
+    auto flipped = screenShot;
+    for (int y = 0; y<size.y; ++y) memcpy(flipped.data() + y*size.x * 3, screenShot.data() + (size.y - y - 1)*size.x * 3, size.x * 3);
+    stbi_write_png(std::string("screenshot_" + timestamp + ".png").c_str(), size.x, size.y, 3, flipped.data(), 3 * size.x);
+    return false;
+}
+
 class Window
 {
     GLFWwindow * window;
