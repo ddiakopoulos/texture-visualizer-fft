@@ -24,7 +24,6 @@
 // cleanup all size.x, size.y types
 // generate mips
 // get rid of older load functions
-// dsa in texture_buffer
 
 inline void draw_text(int x, int y, const char * text)
 {
@@ -33,46 +32,6 @@ inline void draw_text(int x, int y, const char * text)
     glVertexPointer(2, GL_FLOAT, 16, buffer);
     glDrawArrays(GL_QUADS, 0, 4 * stb_easy_font_print((float)x, (float)(y - 7), (char *)text, nullptr, buffer, sizeof(buffer)));
     glDisableClientState(GL_VERTEX_ARRAY);
-}
-
-inline std::string get_extension(const std::string & path)
-{
-    auto found = path.find_last_of('.');
-    if (found == std::string::npos) return "";
-    else return path.substr(found + 1);
-}
-
-inline std::vector<uint8_t> read_file_binary(const std::string pathToFile)
-{
-    FILE * f = fopen(pathToFile.c_str(), "rb");
-
-    if (!f) throw std::runtime_error("file not found");
-
-    fseek(f, 0, SEEK_END);
-    size_t lengthInBytes = ftell(f);
-    fseek(f, 0, SEEK_SET);
-
-    std::vector<uint8_t> fileBuffer(lengthInBytes);
-
-    size_t elementsRead = fread(fileBuffer.data(), 1, lengthInBytes, f);
-
-    if (elementsRead == 0 || fileBuffer.size() < 4) throw std::runtime_error("error reading file or file too small");
-
-    fclose(f);
-    return fileBuffer;
-}
-
-inline float to_luminance(float r, float g, float b)
-{
-    return 0.2126f * r + 0.7152f * g + 0.0722f * b;
-}
-
-template<class T> 
-inline float as_float(const T & x)
-{
-    const float min = std::numeric_limits<T>::min();
-    const float max = std::numeric_limits<T>::max();
-    return (x - min) / (max - min);
 }
 
 class texture_buffer
@@ -131,8 +90,10 @@ inline void upload_png(texture_buffer & buffer, std::vector<uint8_t> & binaryDat
     buffer.size = { width, height };
 }
 
-inline void upload_dds(texture_buffer & buffer, const gli::texture & t)
+inline void upload_dds(texture_buffer & buffer, std::vector<uint8_t> & binaryData)
 {
+    gli::texture t(gli::load_dds((char *)binaryData.data(), binaryData.size()));
+
     for (std::size_t l = 0; l < t.levels(); ++l)
     {
         GLsizei w = (t.extent(l).x), h = (t.extent(l).y);
@@ -197,10 +158,10 @@ inline void shift_fft_image(image_buffer<float, 1> & data)
         for (int i = 0; i < data.size.y; i++) for (int j = 0; j < data.size.x; j++) f(i, j);
     };
 
-    apply([&](int i, int j) { if (data(i, j) < min) min = data(i, j); });
-    apply([&](int i, int j) { data(i, j) -= min; });
-    apply([&](int i, int j) { if (data(i, j) > max) max = data(i, j); });
-    apply([&](int i, int j) { data(i, j) *= (255.f / max); });
+    //apply([&](int i, int j) { if (data(i, j) < min) min = data(i, j); });
+    //apply([&](int i, int j) { data(i, j) -= min; });
+    //apply([&](int i, int j) { if (data(i, j) > max) max = data(i, j); });
+    //apply([&](int i, int j) { data(i, j) *= (255.f / max); });
 }
 
 void center_fft_image(image_buffer<float, 1> & in, image_buffer<float, 1> & out)
@@ -220,7 +181,7 @@ void center_fft_image(image_buffer<float, 1> & in, image_buffer<float, 1> & out)
             else 
             {
                 if (j < halfWidth) out(i, j) = in(i - halfHeight, j + halfWidth);
-                else  out(i, j) = in(i - halfHeight, j - halfWidth);
+                else out(i, j) = in(i - halfHeight, j - halfWidth);
             }
         }
     }
@@ -296,8 +257,6 @@ int main(int argc, char * argv[])
 
             if (ext == "png")
             {
-                //upload_png(*loadedTexture.get(), data, false);
-
                 auto img = png_to_luminance(data);
                 float mean = img.compute_mean();
                 std::vector<std::complex<float>>imgAsComplexArray(img.size.x * img.size.y);
@@ -327,14 +286,14 @@ int main(int argc, char * argv[])
                     for (int x = 0; x < img.size.x; x++)
                     {
                         const auto v = imgAsComplexArray[y * img.size.x + x];
-                        img(y, x) = (std::sqrt((v.real() * v.real()) + (v.imag() * v.imag())) - min) / (max - min);
+                        img(y, x) = ((std::sqrt((v.real() * v.real()) + (v.imag() * v.imag())) - min) / (max - min)) * 64.f;
                     }
                 }
 
-                // Move zero-frequency to the center
-                shift_fft_image(img);
+                // 
+                //shift_fft_image(img);
 
-                // Re-center
+                // Move zero-frequency to the center
                 image_buffer<float, 1> centered(img.size);
                 center_fft_image(img, centered);
 
@@ -343,8 +302,7 @@ int main(int argc, char * argv[])
             }
             else if (ext == "dds")
             {
-                gli::texture imgHandle(gli::load_dds((char *)data.data(), data.size()));
-                upload_dds(*loadedTexture.get(), imgHandle);
+                upload_dds(*loadedTexture.get(), data);
             }
             else
             {

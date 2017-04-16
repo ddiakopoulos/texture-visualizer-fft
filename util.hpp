@@ -14,6 +14,58 @@
 #define GLFW_INCLUDE_GLU
 #include "GLFW\glfw3.h"
 
+////////////////////////
+//   Math Utilities   //
+////////////////////////
+
+inline float to_luminance(float r, float g, float b)
+{
+    return 0.2126f * r + 0.7152f * g + 0.0722f * b;
+}
+
+template<class T>
+inline float as_float(const T & x)
+{
+    const float min = std::numeric_limits<T>::min();
+    const float max = std::numeric_limits<T>::max();
+    return (x - min) / (max - min);
+}
+
+/////////////////////////
+//   File Operations   //
+/////////////////////////
+
+inline std::string get_extension(const std::string & path)
+{
+    auto found = path.find_last_of('.');
+    if (found == std::string::npos) return "";
+    else return path.substr(found + 1);
+}
+
+inline std::vector<uint8_t> read_file_binary(const std::string pathToFile)
+{
+    FILE * f = fopen(pathToFile.c_str(), "rb");
+
+    if (!f) throw std::runtime_error("file not found");
+
+    fseek(f, 0, SEEK_END);
+    size_t lengthInBytes = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    std::vector<uint8_t> fileBuffer(lengthInBytes);
+
+    size_t elementsRead = fread(fileBuffer.data(), 1, lengthInBytes, f);
+
+    if (elementsRead == 0 || fileBuffer.size() < 4) throw std::runtime_error("error reading file or file too small");
+
+    fclose(f);
+    return fileBuffer;
+}
+
+///////////////////////////////////
+//   Windowing & App Lifecycle   //
+///////////////////////////////////
+
 class Window
 {
     GLFWwindow * window;
