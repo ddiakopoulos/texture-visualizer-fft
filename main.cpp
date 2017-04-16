@@ -19,9 +19,10 @@
 
 #include "kissfft/kissfft.hpp"
 
-// Todo
-// image pyramid for mips, generate mips
-// cleanup all size.x, size.y types
+/* todo
+ * [ ] image pyramid for mips, generate mips, ui for mips
+ * [ ] support rgb textures
+ */
 
 inline void draw_text(int x, int y, const char * text)
 {
