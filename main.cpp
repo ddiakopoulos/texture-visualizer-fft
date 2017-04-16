@@ -78,23 +78,17 @@ inline float as_float(const T & x)
 class texture_buffer
 {
     GLuint tex;
-    int2 size;
 public:
-
+    int2 size;
     texture_buffer() : tex(-1)
     {
         if (!tex) glGenTextures(1, &tex);
-        glBindTexture(GL_TEXTURE_2D, tex);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-        glBindTexture(GL_TEXTURE_2D, 0);
+        glTextureParameteriEXT(tex, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteriEXT(tex, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteriEXT(tex, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+        glTextureParameteriEXT(tex, GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     }
-
-    ~texture_buffer() { if (tex) glDeleteBuffers(1, &tex); }
-    void set_size(int2 s) { size = s; }
-    int2 get_size() const { return size; }
+    ~texture_buffer() { if (tex) glDeleteBuffers(1, &tex); };
     GLuint handle() const { return tex; }
 };
 
@@ -134,7 +128,7 @@ inline void upload_png(texture_buffer & buffer, std::vector<uint8_t> & binaryDat
     default: throw std::runtime_error("unsupported number of channels");
     }
     stbi_image_free(data);
-    buffer.set_size({ width, height });
+    buffer.size = { width, height };
 }
 
 inline void upload_dds(texture_buffer & buffer, const gli::texture & t)
@@ -147,7 +141,7 @@ inline void upload_dds(texture_buffer & buffer, const gli::texture & t)
         gli::gl::format const Format = GL.translate(t.format(), t.swizzles());
         GLenum Target = GL.translate(t.target());
         glTextureImage2DEXT(buffer.handle(), GL_TEXTURE_2D, GLint(l), Format.Internal, w, h, 0, Format.External, Format.Type, t.data(0, 0, l));
-        if (l == 0) buffer.set_size({ w, h });
+        if (l == 0) buffer.size = { w, h };
     }
 }
 
@@ -344,7 +338,7 @@ int main(int argc, char * argv[])
                 image_buffer<float, 1> centered(img.size);
                 center_fft_image(img, centered);
 
-                loadedTexture->set_size({ img.size.x, img.size.y });
+                loadedTexture->size = { img.size.x, img.size.y };
                 upload_luminance(*loadedTexture.get(), centered);
             }
             else if (ext == "dds")
@@ -378,7 +372,7 @@ int main(int argc, char * argv[])
 
         if (loadedTexture.get())
         {
-            draw_texture_buffer(0, 0, loadedTexture->get_size().x, loadedTexture->get_size().y, *loadedTexture.get());
+            draw_texture_buffer(0, 0, loadedTexture->size.x, loadedTexture->size.y, *loadedTexture.get());
         }
 
         draw_text(10, 16, loadedFilePath.c_str());
