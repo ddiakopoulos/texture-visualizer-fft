@@ -21,5 +21,6 @@
     <ClInclude Include="third-party\kissfft\kissfft.hpp">
       <Filter>third-party\kiss-fft\include</Filter>
     </ClInclude>
+    <ClInclude Include="util.hpp" />
   </ItemGroup>
 </Project>
