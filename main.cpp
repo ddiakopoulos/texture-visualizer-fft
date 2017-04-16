@@ -1,5 +1,3 @@
-// http://paulbourke.net/miscellaneous/imagefilter/
-
 #include <iostream>
 #include <functional>
 #include <map>
@@ -53,12 +51,17 @@ public:
 template <typename T, int C>
 struct image_buffer
 {
-    std::shared_ptr<T> data;
     const int2 size;
     T * alias;
-    struct delete_array { void operator()(T const * p) { delete[] p; } };
+    struct delete_array { void operator()(T * p) { delete[] p; } };
+    std::unique_ptr<T, decltype(image_buffer::delete_array())> data;
     image_buffer() : size({ 0, 0 }) { }
     image_buffer(const int2 size) : size(size), data(new T[size.x * size.y * C], delete_array()) { alias = data.get(); }
+    image_buffer(const image_buffer<T, C> & r) : size(r.size), data(new T[size.x * size.y * C], delete_array())
+    {
+        alias = data.get();
+        if(r.alias) std::memcpy(alias, r.alias, size.x * size.y * C * sizeof(T));
+    }
     int size_bytes() const { return C * size.x * size.y * sizeof(T); }
     int num_pixels() const { return size.x * size.y; }
     T & operator()(int y, int x) { return alias[y * size.x + x]; }
@@ -229,7 +232,7 @@ public:
     {
         std::vector<int2> levels;
         build_dimensions(levels, size);
-        for (auto l : levels) pyramid.push_back(image_buffer<T, C>(l));
+        for (auto l : levels) pyramid.emplace_back(image_buffer<T, C>(l));
     }
 
     image_buffer<T, C> & level(const int level)
