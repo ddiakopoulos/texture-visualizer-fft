@@ -262,7 +262,6 @@ void resize_box(const image_buffer<float, 1> & in, image_buffer<float, 1> & out)
                 dst++;
                 src += 2;
             }
-
             src += in.size.x;
         }
     }
@@ -354,12 +353,8 @@ int main(int argc, char * argv[])
                 image_buffer<float, 1> centered(img.size);
                 center_fft_image(img, centered);
 
-                image_buffer<float, 1> resized(img.size / 2);
-
-                resize_box(centered, resized);
-
                 loadedTexture->size = { img.size.x, img.size.y };
-                upload_luminance(*loadedTexture.get(), resized);
+                upload_luminance(*loadedTexture.get(), centered);
             }
             else if (fileExtension == "dds")
             {
