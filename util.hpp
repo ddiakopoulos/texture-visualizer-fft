@@ -136,6 +136,7 @@ public:
     bool should_close() const { return !!glfwWindowShouldClose(window); }
     int get_window_attrib(int attrib) const { return glfwGetWindowAttrib(window, attrib); }
     int2 get_window_size() const { int2 size; glfwGetWindowSize(window, &size.x, &size.y); return size; }
+    void set_window_size(int2 newSize) { glfwSetWindowSize(window, newSize.x, newSize.y); }
     int2 get_framebuffer_size() const { int2 size; glfwGetFramebufferSize(window, &size.x, &size.y); return size; }
     float2 get_cursor_pos() const { double2 pos; glfwGetCursorPos(window, &pos.x, &pos.y); return float2(pos); }
 

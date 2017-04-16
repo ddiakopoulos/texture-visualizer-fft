@@ -149,23 +149,10 @@ void draw_texture_buffer(float rx, float ry, float rw, float rh, const texture_b
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-inline void shift_fft_image(image_buffer<float, 1> & data)
-{
-    float max, min;
-    max = min = data(0, 0);
-
-    auto apply = [&](std::function<void(int i, int j)> f) {
-        for (int i = 0; i < data.size.y; i++) for (int j = 0; j < data.size.x; j++) f(i, j);
-    };
-
-    //apply([&](int i, int j) { if (data(i, j) < min) min = data(i, j); });
-    //apply([&](int i, int j) { data(i, j) -= min; });
-    //apply([&](int i, int j) { if (data(i, j) > max) max = data(i, j); });
-    //apply([&](int i, int j) { data(i, j) *= (255.f / max); });
-}
-
 void center_fft_image(image_buffer<float, 1> & in, image_buffer<float, 1> & out)
 {
+    assert(in.size == out.size);
+
     const int halfWidth = in.size.x / 2;
     const int halfHeight = in.size.y / 2;
 
@@ -188,9 +175,8 @@ void center_fft_image(image_buffer<float, 1> & in, image_buffer<float, 1> & out)
 }
 
 // In place
-void compute_fft_2d(std::complex<float> * data, const int width, const int height) 
+void compute_fft_2d(std::complex<float> * data, const int width, const int height, bool inverse = false) 
 {
-    bool inverse = false;
     kissfft<float> xFFT(width, inverse);
     kissfft<float> yFFT(height, inverse);
 
@@ -229,7 +215,7 @@ int main(int argc, char * argv[])
 
     try
     {
-        win.reset(new Window(1280, 720, "image fft visualizer"));
+        win.reset(new Window(512, 512, "image fft visualizer"));
     }
     catch (const std::exception & e)
     {
@@ -258,6 +244,12 @@ int main(int argc, char * argv[])
             if (ext == "png")
             {
                 auto img = png_to_luminance(data);
+
+                // Resize window
+                int2 existingWindowSize = win->get_window_size();
+                int2 newWindowSize = int2(std::max(existingWindowSize.x, img.size.x), std::max(existingWindowSize.y, img.size.y));
+                win->set_window_size(newWindowSize);
+
                 float mean = img.compute_mean();
                 std::vector<std::complex<float>>imgAsComplexArray(img.size.x * img.size.y);
 
@@ -289,9 +281,6 @@ int main(int argc, char * argv[])
                         img(y, x) = ((std::sqrt((v.real() * v.real()) + (v.imag() * v.imag())) - min) / (max - min)) * 64.f;
                     }
                 }
-
-                // 
-                //shift_fft_image(img);
 
                 // Move zero-frequency to the center
                 image_buffer<float, 1> centered(img.size);
