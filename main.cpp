@@ -235,18 +235,43 @@ public:
         for (auto & l : levels) pyramid.emplace_back(std::make_shared<image_buffer<T, C>>(l));
     }
 
-    image_buffer<T, C> & level(int level)
+    size_t levels() const { return pyramid.size(); }
+
+    image_buffer<T, C> & level(const int level)
     {
         return *pyramid[clamp<size_t>(level, 0, levels() - 1)];
     }
 
-    size_t levels() const { return pyramid.size(); }
 };
 
-bool should_take_screenshot = false;
+void resize_box(const image_buffer<float, 1> & in, image_buffer<float, 1> & out)
+{
+    const int w = std::max(1, in.size.x / 2);
+    const int h = std::max(1, in.size.y / 2);
+
+    if ((in.size.x & 1) == 0 && (in.size.y & 1) == 0)
+    {
+        const float * src = in.alias;
+        float * dst = out.alias;
+
+        for (int y = 0; y < h; y++)
+        {
+            for (int x = 0; x < w; x++)
+            {
+                *dst = 0.25f * (src[0] + src[1] + src[in.size.x] + src[in.size.x + 1]);
+                dst++;
+                src += 2;
+            }
+
+            src += in.size.x;
+        }
+    }
+}
 
 int main(int argc, char * argv[])
 {
+    bool should_take_screenshot = false;
+
     image_buffer_pyramid<float, 1> pyramid(512);
 
     std::string status("No file currently loaded...");
@@ -329,8 +354,12 @@ int main(int argc, char * argv[])
                 image_buffer<float, 1> centered(img.size);
                 center_fft_image(img, centered);
 
+                image_buffer<float, 1> resized(img.size / 2);
+
+                resize_box(centered, resized);
+
                 loadedTexture->size = { img.size.x, img.size.y };
-                upload_luminance(*loadedTexture.get(), centered);
+                upload_luminance(*loadedTexture.get(), resized);
             }
             else if (fileExtension == "dds")
             {
