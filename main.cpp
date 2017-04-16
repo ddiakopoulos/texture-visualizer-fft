@@ -117,7 +117,6 @@ image_buffer<float, 1> png_to_luminance(std::vector<uint8_t> & binaryData)
             const float r = as_float<uint8_t>(data[nBytes * (y * width + x) + 0]);
             const float g = as_float<uint8_t>(data[nBytes * (y * width + x) + 1]);
             const float b = as_float<uint8_t>(data[nBytes * (y * width + x) + 2]);
-            //std::cout << r << ", " << g << ", " << b << std::endl;
             buffer(y, x) = to_luminance(r, g, b);
         }
     }
@@ -170,8 +169,11 @@ void center_fft_image(image_buffer<float, 1> & in, image_buffer<float, 1> & out)
 }
 
 // In place
-void compute_fft_2d(std::complex<float> * data, const int width, const int height, bool inverse = false) 
+void compute_fft_2d(std::complex<float> * data, const int2 & size, const bool inverse = false) 
 {
+    const int width = size.x;
+    const int height = size.y;
+
     kissfft<float> xFFT(width, inverse);
     kissfft<float> yFFT(height, inverse);
 
@@ -254,16 +256,11 @@ int main(int argc, char * argv[])
                 std::vector<std::complex<float>>imgAsComplexArray(img.size.x * img.size.y);
 
                 for (int y = 0; y < img.size.y; y++)
-                {
                     for (int x = 0; x < img.size.x; x++)
-                    {
                         imgAsComplexArray[y * img.size.x + x] = img(y, x) - mean;
-                    }
-                }
 
-                compute_fft_2d(imgAsComplexArray.data(), img.size.x, img.size.y);
+                compute_fft_2d(imgAsComplexArray.data(), img.size);
 
-                // Normalize the image
                 float min = std::abs(imgAsComplexArray[0]), max = min;
                 for (int i = 0; i < img.size.x * img.size.y; i++) 
                 {
@@ -272,7 +269,7 @@ int main(int argc, char * argv[])
                     max = std::max(max, value);
                 }
 
-                // Convert back to image type
+                // Convert back to image type & normalize range
                 for (int y = 0; y < img.size.y; y++)
                 {
                     for (int x = 0; x < img.size.x; x++)
