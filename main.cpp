@@ -89,16 +89,18 @@ inline void upload_png(texture_buffer & buffer, std::vector<uint8_t> & binaryDat
 
 inline void upload_dds(texture_buffer & buffer, std::vector<uint8_t> & binaryData)
 {
+    //std::cout << w << ", " << h << std::endl;
+    //std::cout << gli::is_compressed(t.format()) << std::endl;
+
     gli::texture t(gli::load_dds((char *)binaryData.data(), binaryData.size()));
 
     for (std::size_t l = 0; l < t.levels(); ++l)
     {
         GLsizei w = (t.extent(l).x), h = (t.extent(l).y);
-        std::cout << w << ", " << h << std::endl;
         gli::gl GL(gli::gl::PROFILE_GL33);
         gli::gl::format const Format = GL.translate(t.format(), t.swizzles());
         GLenum Target = GL.translate(t.target());
-        glTextureImage2DEXT(buffer.handle(), GL_TEXTURE_2D, GLint(l), Format.Internal, w, h, 0, Format.External, Format.Type, t.data(0, 0, l));
+        glCompressedTextureImage2DEXT(buffer.handle(), Target, GLint(l), Format.Internal, w, h, 0, t.size(l), t.data(0, 0, l));
         if (l == 0) buffer.size = { w, h };
     }
 }
@@ -238,7 +240,7 @@ int main(int argc, char * argv[])
                 loadedFilePath = std::string("Couldn't read file: ") + e.what();
             }
 
-            if (ext == "png")
+            if (ext == "png" || ext == "PNG")
             {
                 auto img = png_to_luminance(data);
 
