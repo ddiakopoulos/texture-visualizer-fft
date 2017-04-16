@@ -232,14 +232,15 @@ public:
     {
         std::vector<int2> levels;
         build_dimensions(levels, size);
-        for (auto l : levels) pyramid.emplace_back(std::make_shared<image_buffer<T, C>>(l));
+        for (auto & l : levels) pyramid.emplace_back(std::make_shared<image_buffer<T, C>>(l));
     }
 
-    image_buffer<T, C> & level(const int level)
+    image_buffer<T, C> & level(int level)
     {
-        assert(level < pyramid.size());
-        return *pyramid[level];
+        return *pyramid[clamp<size_t>(level, 0, levels() - 1)];
     }
+
+    size_t levels() const { return pyramid.size(); }
 };
 
 bool should_take_screenshot = false;

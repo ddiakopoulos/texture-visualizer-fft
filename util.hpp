@@ -36,6 +36,12 @@ inline bool is_power_of_two(const int & n)
     return n > 0 && (n & (n - 1)) == 0;
 }
 
+template<typename T>
+T clamp(const T & val, const T & min, const T & max)
+{
+    return std::min(std::max(val, min), max);
+}
+
 /////////////////////////
 //   File Operations   //
 /////////////////////////
