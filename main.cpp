@@ -44,7 +44,7 @@ public:
         glTextureParameteriEXT(tex, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
         glTextureParameteriEXT(tex, GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     }
-    ~texture_buffer() { if (tex) glDeleteBuffers(1, &tex); };
+    ~texture_buffer() { if (tex) glDeleteTextures(1, &tex); };
     GLuint handle() const { return tex; }
 };
 
@@ -244,7 +244,7 @@ public:
 
 };
 
-void resize_box(const image_buffer<float, 1> & in, image_buffer<float, 1> & out)
+void downsample_half_box_filter(const image_buffer<float, 1> & in, image_buffer<float, 1> & out)
 {
     const int w = std::max(1, in.size.x / 2);
     const int h = std::max(1, in.size.y / 2);
@@ -266,6 +266,10 @@ void resize_box(const image_buffer<float, 1> & in, image_buffer<float, 1> & out)
         }
     }
 }
+
+//////////////////////////
+//   Main Application   //
+//////////////////////////
 
 int main(int argc, char * argv[])
 {
