@@ -18,18 +18,8 @@
 #include "kissfft/kissfft.hpp"
 
 /* todo
- * [ ] image pyramid for mips, generate mips, ui for mips
  * [ ] support rgb textures
  */
-
-inline void draw_text(int x, int y, const char * text)
-{
-    char buffer[64000];
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(2, GL_FLOAT, 16, buffer);
-    glDrawArrays(GL_QUADS, 0, 4 * stb_easy_font_print((float)x, (float)(y - 7), (char *)text, nullptr, buffer, sizeof(buffer)));
-    glDisableClientState(GL_VERTEX_ARRAY);
-}
 
 class texture_buffer
 {
@@ -128,25 +118,6 @@ image_buffer<float, 1> png_to_luminance(std::vector<uint8_t> & binaryData)
     return buffer;
 }
 
-void upload_luminance(texture_buffer & buffer, image_buffer<float, 1> & imgData)
-{
-    glTextureImage2DEXT(buffer.handle(), GL_TEXTURE_2D, 0, GL_LUMINANCE, imgData.size.x, imgData.size.y, 0, GL_LUMINANCE, GL_FLOAT, imgData.data.get());
-}
-
-void draw_texture_buffer(float rx, float ry, float rw, float rh, const texture_buffer & buffer)
-{
-    glBindTexture(GL_TEXTURE_2D, buffer.handle());
-    glEnable(GL_TEXTURE_2D);
-    glBegin(GL_QUADS);
-    glTexCoord2f(0, 0); glVertex2f(rx, ry);
-    glTexCoord2f(1, 0); glVertex2f(rx + rw, ry);
-    glTexCoord2f(1, 1); glVertex2f(rx + rw, ry + rh);
-    glTexCoord2f(0, 1); glVertex2f(rx, ry + rh);
-    glEnd();
-    glDisable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, 0);
-}
-
 void center_fft_image(image_buffer<float, 1> & in, image_buffer<float, 1> & out)
 {
     assert(in.size == out.size);
@@ -202,6 +173,35 @@ void compute_fft_2d(std::complex<float> * data, const int2 & size, const bool in
         for (int y = 0; y < height; y++) data[y * width + x] = yTmp[y];
     }
 }
+
+inline void draw_text(int x, int y, const char * text)
+{
+    char buffer[64000];
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(2, GL_FLOAT, 16, buffer);
+    glDrawArrays(GL_QUADS, 0, 4 * stb_easy_font_print((float)x, (float)(y - 7), (char *)text, nullptr, buffer, sizeof(buffer)));
+    glDisableClientState(GL_VERTEX_ARRAY);
+}
+
+void upload_luminance(texture_buffer & buffer, image_buffer<float, 1> & imgData)
+{
+    glTextureImage2DEXT(buffer.handle(), GL_TEXTURE_2D, 0, GL_LUMINANCE, imgData.size.x, imgData.size.y, 0, GL_LUMINANCE, GL_FLOAT, imgData.data.get());
+}
+
+void draw_texture_buffer(float rx, float ry, float rw, float rh, const texture_buffer & buffer)
+{
+    glBindTexture(GL_TEXTURE_2D, buffer.handle());
+    glEnable(GL_TEXTURE_2D);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0, 0); glVertex2f(rx, ry);
+    glTexCoord2f(1, 0); glVertex2f(rx + rw, ry);
+    glTexCoord2f(1, 1); glVertex2f(rx + rw, ry + rh);
+    glTexCoord2f(0, 1); glVertex2f(rx, ry + rh);
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 
 //////////////////////////
 //   Main Application   //
