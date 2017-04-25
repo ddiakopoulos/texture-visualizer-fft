@@ -207,9 +207,6 @@ void compute_fft_2d(std::complex<float> * data, const int2 & size, const bool in
 //   Main Application   //
 //////////////////////////
 
-std::unique_ptr<texture_buffer> loadedTexture;
-std::unique_ptr<Window> win;
-
 void downsample_half_box_filter(const image_buffer<float, 1> & in, image_buffer<float, 1> & out)
 {
     const int w = std::max(1, in.size.x / 2);
@@ -266,9 +263,7 @@ public:
 
         for (int i = 1; i < levels(); ++i)
         {
-            std::cout << pyramid[i]->size.x << std::endl;
             downsample_half_box_filter(level(i - 1), level(i));
-            std::cout << "Downsizing: " << (i - 1) << " into: " << i << std::endl;
         }
     }
 
@@ -285,11 +280,21 @@ public:
 //   Main Application   //
 //////////////////////////
 
+std::unique_ptr<texture_buffer> loadedTexture;
+std::unique_ptr<Window> win;
+
 int main(int argc, char * argv[])
 {
     bool should_take_screenshot = false;
+    std::unique_ptr<image_buffer_pyramid<float, 1>> pyramid;
 
     std::string status("No file currently loaded...");
+
+    auto loadMip = [&](const int level)
+    {
+        if (!loadedTexture.get()) return;
+        upload_luminance(*loadedTexture.get(), pyramid->level(level));
+    };
 
     try
     {
@@ -303,6 +308,15 @@ int main(int argc, char * argv[])
     win->on_key = [&](int key, int action, int mods)
     {
         if (key == ' ' && action == GLFW_RELEASE) should_take_screenshot = true;
+        if (key == '1' && action == GLFW_RELEASE) loadMip(0);
+        if (key == '2' && action == GLFW_RELEASE) loadMip(1);
+        if (key == '3' && action == GLFW_RELEASE) loadMip(2);
+        if (key == '4' && action == GLFW_RELEASE) loadMip(3);
+        if (key == '5' && action == GLFW_RELEASE) loadMip(4);
+        if (key == '6' && action == GLFW_RELEASE) loadMip(5);
+        if (key == '7' && action == GLFW_RELEASE) loadMip(6);
+        if (key == '8' && action == GLFW_RELEASE) loadMip(7);
+        if (key == '9' && action == GLFW_RELEASE) loadMip(8);
     };
 
     win->on_drop = [&](int numFiles, const char ** paths)
@@ -369,12 +383,11 @@ int main(int argc, char * argv[])
                 image_buffer<float, 1> centered(img.size);
                 center_fft_image(img, centered);
 
-
-                image_buffer_pyramid<float, 1> pyramid(img.size.x);
-                pyramid.build(centered);
+                pyramid.reset(new image_buffer_pyramid<float, 1>(img.size.x)); // todo: validate square
+                pyramid->build(centered);
 
                 loadedTexture->size = { img.size.x, img.size.y };
-                upload_luminance(*loadedTexture.get(), pyramid.level(1));
+                upload_luminance(*loadedTexture.get(), pyramid->level(0));
             }
             else if (fileExtension == "dds")
             {
