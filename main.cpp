@@ -210,40 +210,6 @@ void compute_fft_2d(std::complex<float> * data, const int2 & size, const bool in
 std::unique_ptr<texture_buffer> loadedTexture;
 std::unique_ptr<Window> win;
 
-template <typename T, int C>
-class image_buffer_pyramid
-{
-    void build_dimensions(std::vector<int2> & levels, int size)
-    {
-        if (size == 2)
-        {
-            levels.push_back({ 1, 1 });
-            return;
-        }
-        levels.push_back({ size, size });
-        build_dimensions(levels, size / 2);
-    }
-
-    std::vector<std::shared_ptr<image_buffer<T, C>>> pyramid;
-
-public:
-
-    image_buffer_pyramid(const int size)
-    {
-        std::vector<int2> levels;
-        build_dimensions(levels, size);
-        for (auto & l : levels) pyramid.emplace_back(std::make_shared<image_buffer<T, C>>(l));
-    }
-
-    size_t levels() const { return pyramid.size(); }
-
-    image_buffer<T, C> & level(const int level)
-    {
-        return *pyramid[clamp<size_t>(level, 0, levels() - 1)];
-    }
-
-};
-
 void downsample_half_box_filter(const image_buffer<float, 1> & in, image_buffer<float, 1> & out)
 {
     const int w = std::max(1, in.size.x / 2);
@@ -267,6 +233,54 @@ void downsample_half_box_filter(const image_buffer<float, 1> & in, image_buffer<
     }
 }
 
+template <typename T, int C>
+class image_buffer_pyramid
+{
+    void build_dimensions(std::vector<int2> & levels, int size)
+    {
+        if (size == 1)
+        {
+            levels.push_back({ 1, 1 });
+            return;
+        }
+        levels.push_back({ size, size });
+        build_dimensions(levels, size / 2);
+    }
+
+    std::vector<std::shared_ptr<image_buffer<T, C>>> pyramid;
+
+public:
+
+    image_buffer_pyramid(const int size)
+    {
+        std::vector<int2> levels;
+        build_dimensions(levels, size);
+        for (auto & l : levels) pyramid.emplace_back(std::make_shared<image_buffer<T, C>>(l));
+    }
+
+    void build(const image_buffer<float, 1> & in)
+    {
+        // Copy for level 0
+        image_buffer<T, C> & originalSize = level(0);  
+        std::memcpy(originalSize.data.get(), in.data.get(), originalSize.size.x * originalSize.size.y * sizeof(float));
+
+        for (int i = 1; i < levels(); ++i)
+        {
+            std::cout << pyramid[i]->size.x << std::endl;
+            downsample_half_box_filter(level(i - 1), level(i));
+            std::cout << "Downsizing: " << (i - 1) << " into: " << i << std::endl;
+        }
+    }
+
+    size_t levels() const { return pyramid.size(); }
+
+    image_buffer<T, C> & level(const int level)
+    {
+        return *pyramid[clamp<size_t>(level, 0, levels() - 1)];
+    }
+
+};
+
 //////////////////////////
 //   Main Application   //
 //////////////////////////
@@ -274,8 +288,6 @@ void downsample_half_box_filter(const image_buffer<float, 1> & in, image_buffer<
 int main(int argc, char * argv[])
 {
     bool should_take_screenshot = false;
-
-    image_buffer_pyramid<float, 1> pyramid(512);
 
     std::string status("No file currently loaded...");
 
@@ -357,8 +369,12 @@ int main(int argc, char * argv[])
                 image_buffer<float, 1> centered(img.size);
                 center_fft_image(img, centered);
 
+
+                image_buffer_pyramid<float, 1> pyramid(img.size.x);
+                pyramid.build(centered);
+
                 loadedTexture->size = { img.size.x, img.size.y };
-                upload_luminance(*loadedTexture.get(), centered);
+                upload_luminance(*loadedTexture.get(), pyramid.level(1));
             }
             else if (fileExtension == "dds")
             {
